@@ -1,0 +1,102 @@
+[
+  {
+    "name": "Lira Windvale",
+    "class": "Healer",
+    "race": "Elf",
+    "personality": "Kind-hearted and cautious, always puts others first.",
+    "combat_role": "Support",
+    "quirks": "Hums lullabies when healing; allergic to cats.",
+    "voice": "Soft and melodic",
+    "trait": "Wears a silver locket with a photo of her sister."
+  },
+  {
+    "name": "Thorn Blackroot",
+    "class": "Rogue",
+    "race": "Half-Orc",
+    "personality": "Sarcastic and pragmatic, but fiercely loyal once trust is earned.",
+    "combat_role": "Stealth / Damage",
+    "quirks": "Never enters a room through the door; obsessed with shiny objects.",
+    "voice": "Low and gruff, with a hint of mischief",
+    "trait": "Keeps a journal with coded entries no one can crack."
+  },
+  {
+    "name": "Elda Farwatch",
+    "class": "Scholar (Wizard)",
+    "race": "Human",
+    "personality": "Inquisitive and timid, full of curiosity and fear in equal parts.",
+    "combat_role": "Magic Support / Control",
+    "quirks": "Speaks too fast when excited; wears mismatched socks.",
+    "voice": "Nervous and high-pitched",
+    "trait": "Has a floating spellbook that follows her like a puppy."
+  },
+  {
+    "name": "Durgan Stoneheart",
+    "class": "Fighter",
+    "race": "Dwarf",
+    "personality": "Brave but reckless; charges first, thinks later.",
+    "combat_role": "Frontline Tank / Damage",
+    "quirks": "Talks to his axe like it's a person; hates stairs.",
+    "voice": "Loud and booming",
+    "trait": "Beard is braided into the shape of a hammer."
+  },
+  {
+    "name": "Mira Velen",
+    "class": "Bard",
+    "race": "Tiefling",
+    "personality": "Flirtatious, dramatic, and always seeking attention.",
+    "combat_role": "Support / Crowd Control",
+    "quirks": "Rhymes when nervous; carries perfume for every mood.",
+    "voice": "Velvety and theatrical",
+    "trait": "Her lute can shoot sparks when she strums hard."
+  },
+  {
+    "name": "Kel Emberwatch",
+    "class": "Ranger",
+    "race": "Half-Elf",
+    "personality": "Quiet, calculating, prefers animals over people.",
+    "combat_role": "Ranged DPS / Scout",
+    "quirks": "Sleeps with one eye open; names all their arrows.",
+    "voice": "Low, calm, slightly monotone",
+    "trait": "Always accompanied by a hawk named Whisper."
+  },
+  {
+    "name": "Tavi Moonsoul",
+    "class": "Cleric",
+    "race": "Aasimar",
+    "personality": "Strict and devout, unwavering in moral code.",
+    "combat_role": "Healer / Buffer",
+    "quirks": "Quotes scripture constantly; fastidious about cleanliness.",
+    "voice": "Firm and clear",
+    "trait": "Eyes glow faintly in the dark."
+  },
+  {
+    "name": "Rook Ashbrand",
+    "class": "Warlock",
+    "race": "Human",
+    "personality": "Mysterious and brooding, hides a troubled past.",
+    "combat_role": "Magic DPS / Debuffer",
+    "quirks": "Talks to shadows; refuses to remove gloves.",
+    "voice": "Smooth, deep, and slow-paced",
+    "trait": "His cloak absorbs light unnaturally."
+  },
+  {
+    "name": "Nyra Dawnsworn",
+    "class": "Paladin",
+    "race": "Dragonborn",
+    "personality": "Noble and idealistic, always defends the weak.",
+    "combat_role": "Tank / Support",
+    "quirks": "Keeps a diary titled 'Knightly Thoughts'; salutes before battle.",
+    "voice": "Proud and commanding",
+    "trait": "Armor glows slightly in sunlight."
+  },
+  {
+    "name": "Zekk Tinkbolt",
+    "class": "Artificer",
+    "race": "Gnome",
+    "personality": "Chaotic, curious, always building something bizarre.",
+    "combat_role": "Support / Utility",
+    "quirks": "Invents at least one new gadget per day (half explode).",
+    "voice": "Fast-talking and squeaky",
+    "trait": "Wears goggles with four lenses that constantly flip."
+  }
+]
