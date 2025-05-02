@@ -4,11 +4,18 @@ import openai
 from pydantic import BaseModel, Field
 from utils import *
 import PyPDF2
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Automatically loads from `.env` in current directory
+
+api_key = os.getenv("OPENAI_API_KEY")
+base_url = os.getenv("OPENAI_BASE_URL")
 
 # === Set up OpenAI client ===
 client = OpenAI(
-    api_key="sk-xIvD5Mw4sc1_owNpoJcO8g",
-    base_url="https://api.ai.it.cornell.edu/"
+    api_key=api_key,
+    base_url=base_url
 )
 
 # === Set up session state ===
