@@ -76,9 +76,11 @@ def load_npc_pool(path="npcs.json") -> list:
 
 def sample_npcs(n: int) -> dict:
     """Randomly sample N predefined NPCs and return them as NPCPlayer objects."""
-    import random
+
     npc_pool = load_npc_pool()
+    print(len(npc_pool))
     sampled = random.sample(npc_pool, min(n, len(npc_pool)))
+    print(len(sampled))
 
     npc_players = [NPCPlayer.from_dict(npc) for npc in sampled]
     return {"npcs": npc_players}

@@ -25,7 +25,6 @@ if "chat_log" not in st.session_state:
 if "players" not in st.session_state or not isinstance(list(st.session_state.players.values())[0], Player):
     st.session_state.players = {
         "Aragorn": Player(name="Aragorn", max_hp=30, hp=30),
-        "Frodo": Player(name="Frodo", max_hp=20, hp=20)
     }
 
 
