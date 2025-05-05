@@ -6,6 +6,8 @@ from utils import *
 import PyPDF2
 from dotenv import load_dotenv
 import os
+import base64
+from utils import save_scene_graph_image
 
 load_dotenv()  # Automatically loads from `.env` in current directory
 
@@ -27,6 +29,37 @@ if "players" not in st.session_state or not isinstance(list(st.session_state.pla
         "Aragorn": Player(name="Aragorn", max_hp=30, hp=30),
     }
 
+
+scene_graph_agent = Agent(
+    name="SceneGraphAgent",
+    model="openai.gpt-4o",
+    instructions="""
+    You are a Dungeons & Dragons campaign analyst. Given a full script of a one-shot adventure, extract a structured scene map.
+
+    For each scene, return:
+    - scene_number: the number of the scene
+    - title: short name for the scene
+    - location: where the scene happens (village, forest, shrine, etc.)
+    - description: short summary of what happens
+    - connections: list of scene titles or numbers that logically follow this one
+
+    Return a JSON array like:
+    [
+    {
+        "scene_number": 1,
+        "title": "The Village of Moonshade",
+        "location": "Moonshade Valley",
+        "description": "Party meets Mayor and learns of ghostly singing.",
+        "connections": ["Misty Forest Path"]
+    },
+    ...
+    ]
+    Only include story-driving scenes (ignore rewards, stat blocks, etc).
+    Don't include Scene number in connections. Only the name.
+    """,
+    tools=[],
+    players={}
+)
 
 # === Streamlit UI ===
 st.title("🧙 D&D Chat with Dice Rolls")
@@ -54,8 +87,6 @@ if st.button("Generate NPCs"):
 st.header("📘 Upload Your Script")
 
 uploaded_file = st.file_uploader("Upload your campaign script (PDF or TXT)", type=["pdf", "txt"])
-
-plot = ""
 if uploaded_file:
     if uploaded_file.type == "application/pdf":
         try:
@@ -71,14 +102,35 @@ if uploaded_file:
     else:
         st.warning("Unsupported file type")
         plot = ""
-
     st.session_state["script_text"] = plot
+    st.success("✅ Scene map successfully extracted!")
 
     st.subheader("📜 Script Preview")
     st.text_area("Script contents:", plot, height=400)
 
 else:
     st.info("Please upload a PDF or TXT file to begin setting up your world.")
+
+if "scene_graph_img" not in st.session_state and "script_text" in st.session_state:
+
+    messages = [{"role": "user", "content": plot}]
+    scene_response, _ = run_full_turn(client, scene_graph_agent, messages)
+    scene_data_raw = scene_response[-1].content if hasattr(scene_response[-1], "content") else scene_response[-1]["content"]
+
+    # Strip ```json ... ``` if GPT wrapped it
+    scene_data_raw = re.sub(r"^```(?:json)?|```$", "", scene_data_raw.strip(), flags=re.IGNORECASE | re.MULTILINE).strip()
+
+    scene_data = json.loads(scene_data_raw)
+
+    st.session_state["scene_list"] = scene_data
+    st.session_state["current_scene"] = scene_data[0]["title"] if scene_data else "Unknown"
+    graph_path = save_scene_graph_image(scene_data, current_location=st.session_state["current_scene"])
+    with open(graph_path, "rb") as f:
+        encoded_img = base64.b64encode(f.read()).decode()
+
+    # Store encoded image for display
+    st.session_state["scene_graph_img"] = encoded_img
+
 
 # === Define the agent using your helper class ===
 npc_context = ""
@@ -90,16 +142,18 @@ instructions = (
     "You can use the `roll_dice` tool when needed. "
     "Use vivid storytelling and refer to characters naturally.\n\n"
     f"The following NPCs are present:\n{npc_context}"
-    f"Current script: {plot}"
+    f"Current script: {st.session_state["script_text"] if "script_text" in st.session_state else ''}"
+    f"Available Scenes: {st.session_state["scene_list"] if "scene_list" in st.session_state else ''}"
 )
 
 agent = Agent(
     name="DungeonMaster",
     model="openai.gpt-4o",
     instructions=instructions,
-    tools=[roll_dice, sample_npcs],
+    tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc],
     players=st.session_state.players
 )
+
 
 # === Display chat log ===
 for msg in st.session_state.chat_log:
@@ -111,6 +165,7 @@ for msg in st.session_state.chat_log:
 
     with st.chat_message(role):
         st.markdown(content)
+
 
 # === Chat input ===
 if prompt := st.chat_input("What happens next?"):
@@ -132,9 +187,14 @@ if prompt := st.chat_input("What happens next?"):
 
         with st.chat_message(role):
             st.markdown(content)
+
     # Apply effects like healing or damage
     apply_hp_effects(client, new_messages, agent.players)
 
 render_sidebar(agent.players)
 if "npcs" in st.session_state:
     render_npcs(st.session_state["npcs"])
+    
+if "scene_graph_img" in st.session_state:
+    render_scene_graph_bottom_right(st.session_state["scene_graph_img"])
+    # render_scene_graph_right_panel(st.session_state["scene_graph_img"])

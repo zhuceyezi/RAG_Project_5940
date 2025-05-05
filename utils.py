@@ -1,3 +1,4 @@
+import base64
 import inspect
 import json
 import re
@@ -5,6 +6,9 @@ from pydantic import BaseModel, Field
 from typing import Dict
 import random
 import streamlit as st
+import networkx as nx
+import matplotlib.pyplot as plt
+import tempfile
 
 class Player:
     def __init__(self, name, max_hp, hp):
@@ -73,14 +77,60 @@ class NPCPlayer(Player):
 def load_npc_pool(path="npcs.json") -> list:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+    
+def save_scene_graph_image(scene_data, current_location=None):
+    import matplotlib.pyplot as plt
+    import networkx as nx
+    import tempfile
+    from matplotlib.patches import Patch
+
+    G = nx.DiGraph()
+    labels = {}
+    node_colors = []
+
+    for scene in scene_data:
+        title = scene["title"]
+        G.add_node(title)
+        labels[title] = f'{scene["scene_number"]}. {title}'
+        for conn in scene.get("connections", []):
+            G.add_edge(title, conn)
+
+    pos = nx.spring_layout(G, seed=42)
+
+    for node in G.nodes:
+        if current_location and node.lower() == current_location.lower():
+            node_colors.append("red")
+        else:
+            node_colors.append("lightblue")
+
+    plt.figure(figsize=(6, 6))
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=2200)
+    nx.draw_networkx_edges(G, pos, arrowstyle="->", arrowsize=20, edge_color="gray")
+    nx.draw_networkx_labels(G, pos, labels, font_size=10)
+
+    # Add legend below the graph
+    legend_elements = [
+        Patch(facecolor='red', edgecolor='gray', label='Current Location'),
+        Patch(facecolor='lightblue', edgecolor='gray', label='Other Scenes')
+    ]
+    plt.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.1), ncol=2)
+
+    tmpfile = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    plt.axis("off")
+    plt.tight_layout(pad=2)
+    plt.savefig(tmpfile.name, format="png", bbox_inches="tight")
+    plt.close()
+    return tmpfile.name
+
+
 
 def sample_npcs(n: int) -> dict:
     """Randomly sample N predefined NPCs and return them as NPCPlayer objects."""
 
     npc_pool = load_npc_pool()
-    print(len(npc_pool))
+    print(f"There are {len(npc_pool)} NPCs in the pool")
     sampled = random.sample(npc_pool, min(n, len(npc_pool)))
-    print(len(sampled))
+    print(f"Sampled {len(sampled)} NPCs")
 
     npc_players = [NPCPlayer.from_dict(npc) for npc in sampled]
     return {"npcs": npc_players}
@@ -300,7 +350,67 @@ def render_npcs(npcs: list):
             else:  # fallback
                 with st.expander(f"{npc.name}"):
                     st.markdown(f"🩸 {'🟥' * bar}{'⬛' * (20 - bar)} ({npc.hp}/{npc.max_hp})")
+                    
+def render_scene_graph_bottom_right(encoded_image: str):
+    st.markdown(
+        f"""
+        <div style='
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 20vw;
+            height: 50vh;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: -2px -2px 10px rgba(0,0,0,0.1);
+            z-index: 10000;
+            padding: 12px;
+            overflow: auto;
+        '>
+            <div style='font-weight: bold; margin-bottom: 8px; font-size: 16px;'>🗺️ Scene Map</div>
+            <img src='data:image/png;base64,{encoded_image}' style='width: 100%; height: auto;' />
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
+    
+def render_scene_graph_right_panel(encoded_image: str):
+    st.markdown(
+        f"""
+        <div style='
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 20vw;
+            height: 100vh;
+            background: white;
+            border-left: 2px solid #ccc;
+            box-shadow: -4px 0 10px rgba(0,0,0,0.1);
+            z-index: 10000;
+            padding: 16px;
+            overflow-y: auto;
+        '>
+            <div style='font-weight: bold; margin-bottom: 12px; font-size: 18px;'>🗺️ Scene Map</div>
+            <img src='data:image/png;base64,{encoded_image}' style='width: 100%; height: auto;' />
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# @tool
+def remove_npc(name: str):
+    """Remove a player or NPC by name. Used when a character dies or should be removed."""
+    if "npcs" not in st.session_state:
+        return
+
+    original_count = len(st.session_state["npcs"])
+    st.session_state["npcs"] = [
+        npc for npc in st.session_state["npcs"] if npc.name.lower() != name.lower()
+    ]
+
+    if len(st.session_state["npcs"]) < original_count:
+        st.info(f"💀 NPC '{name}' has fallen and was removed from the sidebar.")
 
 
 def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o"):
@@ -408,6 +518,9 @@ def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o")
         elif kind == "damage":
             player.take_damage(amount)
             st.error(f"🔴 {player.name} takes {amount} damage → {player.status()}")
+            # ✅ Remove if it's an NPC and HP hits zero
+            if player.hp <= 0 and "npcs" in st.session_state and player in st.session_state["npcs"]:
+                remove_npc(player.name)
         else:
             st.warning(f"⚠️ Unknown effect type: {kind}")
 
@@ -438,3 +551,54 @@ def extract_hp_effect_from_text(client, assistant_text: str, player_names: list,
     except Exception as e:
         st.warning(f"❌ GPT could not parse HP effect: {e}")
         return None
+
+# @TOOL
+def move_to_scene(scene_name):
+    """Set the current scene to a known scene by title. Use this whenever players move to a place."""
+    scene_data = st.session_state.get("scene_list")
+    st.session_state["current_scene"] = scene_name
+
+    if not scene_data:
+        return
+
+    graph_path = save_scene_graph_image(scene_data, current_location=scene_name)
+    with open(graph_path, "rb") as f:
+        encoded_img = base64.b64encode(f.read()).decode()
+
+    st.session_state["scene_graph_img"] = encoded_img
+
+# @tool
+def add_npc(
+    name: str,
+    max_hp: int = 10,
+    hp: int = None,
+    race: str = "Unknown",
+    class_: str = "Unknown",
+    personality: str = "Unknown",
+    combat_role: str = "None",
+    quirks: str = "",
+    voice: str = "",
+    trait: str = "",
+):
+    """Add an NPC or enemy to the sidebar. Can be full character or simple enemy."""
+    if hp is None:
+        hp = max_hp
+
+    npc = NPCPlayer(
+        name=name,
+        race=race,
+        char_class=class_,
+        max_hp=max_hp,
+        hp=hp,
+        personality=personality,
+        combat_role=combat_role,
+        quirks=quirks,
+        voice=voice,
+        trait=trait
+    )
+
+    if "npcs" not in st.session_state:
+        st.session_state["npcs"] = []
+
+    st.session_state["npcs"].append(npc)
+    return f"✅ NPC or enemy '{name}' has been added with {hp}/{max_hp} HP."
