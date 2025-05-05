@@ -6,6 +6,8 @@ from utils import *
 import PyPDF2
 from dotenv import load_dotenv
 import os
+import base64
+from utils import save_scene_graph_image
 
 load_dotenv()  # Automatically loads from `.env` in current directory
 
@@ -107,10 +109,20 @@ if uploaded_file:
     messages = [{"role": "user", "content": plot}]
     scene_response, _ = run_full_turn(client, scene_graph_agent, messages)
     scene_data_raw = scene_response[-1].content if hasattr(scene_response[-1], "content") else scene_response[-1]["content"]
+
+    # Strip ```json ... ``` if GPT wrapped it
+    scene_data_raw = re.sub(r"^```(?:json)?|```$", "", scene_data_raw.strip(), flags=re.IGNORECASE | re.MULTILINE).strip()
+
     scene_data = json.loads(scene_data_raw)
 
     st.session_state["scene_list"] = scene_data
-    st.session_state["current_scene"] = scene_data[0]["location"] if scene_data else "Unknown"
+    st.session_state["current_scene"] = scene_data[0]["title"] if scene_data else "Unknown"
+    graph_path = save_scene_graph_image(scene_data, current_location=st.session_state["current_scene"])
+    with open(graph_path, "rb") as f:
+        encoded_img = base64.b64encode(f.read()).decode()
+
+    # Store encoded image for display
+    st.session_state["scene_graph_img"] = encoded_img
 
     st.success("✅ Scene map successfully extracted!")
 
@@ -179,3 +191,7 @@ if prompt := st.chat_input("What happens next?"):
 render_sidebar(agent.players)
 if "npcs" in st.session_state:
     render_npcs(st.session_state["npcs"])
+    
+if "scene_graph_img" in st.session_state:
+    render_scene_graph_bottom_right(st.session_state["scene_graph_img"])
+    # render_scene_graph_right_panel(st.session_state["scene_graph_img"])
