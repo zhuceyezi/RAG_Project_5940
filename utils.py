@@ -1,3 +1,4 @@
+import base64
 import inspect
 import json
 import re
@@ -127,9 +128,9 @@ def sample_npcs(n: int) -> dict:
     """Randomly sample N predefined NPCs and return them as NPCPlayer objects."""
 
     npc_pool = load_npc_pool()
-    print(len(npc_pool))
+    print(f"There are {len(npc_pool)} NPCs in the pool")
     sampled = random.sample(npc_pool, min(n, len(npc_pool)))
-    print(len(sampled))
+    print(f"Sampled {len(sampled)} NPCs")
 
     npc_players = [NPCPlayer.from_dict(npc) for npc in sampled]
     return {"npcs": npc_players}
@@ -397,9 +398,6 @@ def render_scene_graph_right_panel(encoded_image: str):
         unsafe_allow_html=True
     )
 
-
-
-
 def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o"):
     """Uses GPT to extract and apply multiple HP effects from assistant narration via run_full_turn."""
     # Combine all assistant text into one clean block
@@ -535,16 +533,33 @@ def extract_hp_effect_from_text(client, assistant_text: str, player_names: list,
     except Exception as e:
         st.warning(f"❌ GPT could not parse HP effect: {e}")
         return None
-    
-    def update_scene_graph_image():
-        scene_data = st.session_state.get("scene_list")
-        current_location = st.session_state.get("current_scene")
 
-        if not scene_data:
-            return
+    # # @tool
+    # def move_to_scene(scene_name: str):
+    #     scene_titles = [s["title"] for s in st.session_state.get("scene_list", [])]
+    #     if scene_name not in scene_titles:
+    #         return f"Scene '{scene_name}' not found."
+    #     st.session_state["current_scene"] = scene_name
+    #     print(f"✅ Moved to scene: {scene_name}")
+    #     graph_path = save_scene_graph_image(st.session_state["scene_list"],
+    #                                         current_location=st.session_state["current_scene"])
+    #     with open(graph_path, "rb") as f:
+    #         encoded_img = base64.b64encode(f.read()).decode()
+    #     # Store encoded image for display
+    #     st.session_state["scene_graph_img"] = encoded_img
+    #     return f"✅ Moved to scene: {scene_name}"
 
-        graph_path = save_scene_graph_image(scene_data, current_location=current_location)
-        with open(graph_path, "rb") as f:
-            encoded_img = base64.b64encode(f.read()).decode()
+# @TOOL
+def move_to_scene(scene_name):
+    """Set the current scene to a known scene by title. Use this whenever players move to a place."""
+    scene_data = st.session_state.get("scene_list")
+    st.session_state["current_scene"] = scene_name
 
-        st.session_state["scene_graph_img"] = encoded_img
+    if not scene_data:
+        return
+
+    graph_path = save_scene_graph_image(scene_data, current_location=scene_name)
+    with open(graph_path, "rb") as f:
+        encoded_img = base64.b64encode(f.read()).decode()
+
+    st.session_state["scene_graph_img"] = encoded_img

@@ -55,6 +55,7 @@ scene_graph_agent = Agent(
     ...
     ]
     Only include story-driving scenes (ignore rewards, stat blocks, etc).
+    Don't include Scene number in connections. Only the name.
     """,
     tools=[],
     players={}
@@ -86,8 +87,6 @@ if st.button("Generate NPCs"):
 st.header("📘 Upload Your Script")
 
 uploaded_file = st.file_uploader("Upload your campaign script (PDF or TXT)", type=["pdf", "txt"])
-
-plot = ""
 if uploaded_file:
     if uploaded_file.type == "application/pdf":
         try:
@@ -103,9 +102,17 @@ if uploaded_file:
     else:
         st.warning("Unsupported file type")
         plot = ""
-
     st.session_state["script_text"] = plot
-    
+    st.success("✅ Scene map successfully extracted!")
+
+    st.subheader("📜 Script Preview")
+    st.text_area("Script contents:", plot, height=400)
+
+else:
+    st.info("Please upload a PDF or TXT file to begin setting up your world.")
+
+if "scene_graph_img" not in st.session_state and "script_text" in st.session_state:
+
     messages = [{"role": "user", "content": plot}]
     scene_response, _ = run_full_turn(client, scene_graph_agent, messages)
     scene_data_raw = scene_response[-1].content if hasattr(scene_response[-1], "content") else scene_response[-1]["content"]
@@ -124,13 +131,6 @@ if uploaded_file:
     # Store encoded image for display
     st.session_state["scene_graph_img"] = encoded_img
 
-    st.success("✅ Scene map successfully extracted!")
-
-    st.subheader("📜 Script Preview")
-    st.text_area("Script contents:", plot, height=400)
-
-else:
-    st.info("Please upload a PDF or TXT file to begin setting up your world.")
 
 # === Define the agent using your helper class ===
 npc_context = ""
@@ -142,14 +142,15 @@ instructions = (
     "You can use the `roll_dice` tool when needed. "
     "Use vivid storytelling and refer to characters naturally.\n\n"
     f"The following NPCs are present:\n{npc_context}"
-    f"Current script: {plot}"
+    f"Current script: {st.session_state["script_text"] if "script_text" in st.session_state else ''}"
+    f"Available Scenes: {st.session_state["scene_list"] if "scene_list" in st.session_state else ''}"
 )
 
 agent = Agent(
     name="DungeonMaster",
     model="openai.gpt-4o",
     instructions=instructions,
-    tools=[roll_dice, sample_npcs],
+    tools=[roll_dice, sample_npcs, move_to_scene],
     players=st.session_state.players
 )
 
@@ -164,6 +165,7 @@ for msg in st.session_state.chat_log:
 
     with st.chat_message(role):
         st.markdown(content)
+
 
 # === Chat input ===
 if prompt := st.chat_input("What happens next?"):
@@ -185,6 +187,7 @@ if prompt := st.chat_input("What happens next?"):
 
         with st.chat_message(role):
             st.markdown(content)
+
     # Apply effects like healing or damage
     apply_hp_effects(client, new_messages, agent.players)
 
