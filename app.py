@@ -28,6 +28,36 @@ if "players" not in st.session_state or not isinstance(list(st.session_state.pla
     }
 
 
+scene_graph_agent = Agent(
+    name="SceneGraphAgent",
+    model="openai.gpt-4o",
+    instructions="""
+    You are a Dungeons & Dragons campaign analyst. Given a full script of a one-shot adventure, extract a structured scene map.
+
+    For each scene, return:
+    - scene_number: the number of the scene
+    - title: short name for the scene
+    - location: where the scene happens (village, forest, shrine, etc.)
+    - description: short summary of what happens
+    - connections: list of scene titles or numbers that logically follow this one
+
+    Return a JSON array like:
+    [
+    {
+        "scene_number": 1,
+        "title": "The Village of Moonshade",
+        "location": "Moonshade Valley",
+        "description": "Party meets Mayor and learns of ghostly singing.",
+        "connections": ["Misty Forest Path"]
+    },
+    ...
+    ]
+    Only include story-driving scenes (ignore rewards, stat blocks, etc).
+    """,
+    tools=[],
+    players={}
+)
+
 # === Streamlit UI ===
 st.title("🧙 D&D Chat with Dice Rolls")
 st.caption("Powered by Azure OpenAI + Tool Calling")
@@ -73,6 +103,16 @@ if uploaded_file:
         plot = ""
 
     st.session_state["script_text"] = plot
+    
+    messages = [{"role": "user", "content": plot}]
+    scene_response, _ = run_full_turn(client, scene_graph_agent, messages)
+    scene_data_raw = scene_response[-1].content if hasattr(scene_response[-1], "content") else scene_response[-1]["content"]
+    scene_data = json.loads(scene_data_raw)
+
+    st.session_state["scene_list"] = scene_data
+    st.session_state["current_scene"] = scene_data[0]["location"] if scene_data else "Unknown"
+
+    st.success("✅ Scene map successfully extracted!")
 
     st.subheader("📜 Script Preview")
     st.text_area("Script contents:", plot, height=400)
@@ -100,6 +140,7 @@ agent = Agent(
     tools=[roll_dice, sample_npcs],
     players=st.session_state.players
 )
+
 
 # === Display chat log ===
 for msg in st.session_state.chat_log:
