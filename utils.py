@@ -535,3 +535,16 @@ def extract_hp_effect_from_text(client, assistant_text: str, player_names: list,
     except Exception as e:
         st.warning(f"❌ GPT could not parse HP effect: {e}")
         return None
+    
+    def update_scene_graph_image():
+        scene_data = st.session_state.get("scene_list")
+        current_location = st.session_state.get("current_scene")
+
+        if not scene_data:
+            return
+
+        graph_path = save_scene_graph_image(scene_data, current_location=current_location)
+        with open(graph_path, "rb") as f:
+            encoded_img = base64.b64encode(f.read()).decode()
+
+        st.session_state["scene_graph_img"] = encoded_img
