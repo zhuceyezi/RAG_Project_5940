@@ -398,6 +398,21 @@ def render_scene_graph_right_panel(encoded_image: str):
         unsafe_allow_html=True
     )
 
+# @tool
+def remove_npc(name: str):
+    """Remove a player or NPC by name. Used when a character dies or should be removed."""
+    if "npcs" not in st.session_state:
+        return
+
+    original_count = len(st.session_state["npcs"])
+    st.session_state["npcs"] = [
+        npc for npc in st.session_state["npcs"] if npc.name.lower() != name.lower()
+    ]
+
+    if len(st.session_state["npcs"]) < original_count:
+        st.info(f"💀 NPC '{name}' has fallen and was removed from the sidebar.")
+
+
 def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o"):
     """Uses GPT to extract and apply multiple HP effects from assistant narration via run_full_turn."""
     # Combine all assistant text into one clean block
@@ -503,6 +518,9 @@ def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o")
         elif kind == "damage":
             player.take_damage(amount)
             st.error(f"🔴 {player.name} takes {amount} damage → {player.status()}")
+            # ✅ Remove if it's an NPC and HP hits zero
+            if player.hp <= 0 and "npcs" in st.session_state and player in st.session_state["npcs"]:
+                remove_npc(player.name)
         else:
             st.warning(f"⚠️ Unknown effect type: {kind}")
 
@@ -534,21 +552,6 @@ def extract_hp_effect_from_text(client, assistant_text: str, player_names: list,
         st.warning(f"❌ GPT could not parse HP effect: {e}")
         return None
 
-    # # @tool
-    # def move_to_scene(scene_name: str):
-    #     scene_titles = [s["title"] for s in st.session_state.get("scene_list", [])]
-    #     if scene_name not in scene_titles:
-    #         return f"Scene '{scene_name}' not found."
-    #     st.session_state["current_scene"] = scene_name
-    #     print(f"✅ Moved to scene: {scene_name}")
-    #     graph_path = save_scene_graph_image(st.session_state["scene_list"],
-    #                                         current_location=st.session_state["current_scene"])
-    #     with open(graph_path, "rb") as f:
-    #         encoded_img = base64.b64encode(f.read()).decode()
-    #     # Store encoded image for display
-    #     st.session_state["scene_graph_img"] = encoded_img
-    #     return f"✅ Moved to scene: {scene_name}"
-
 # @TOOL
 def move_to_scene(scene_name):
     """Set the current scene to a known scene by title. Use this whenever players move to a place."""
@@ -563,3 +566,39 @@ def move_to_scene(scene_name):
         encoded_img = base64.b64encode(f.read()).decode()
 
     st.session_state["scene_graph_img"] = encoded_img
+
+# @tool
+def add_npc(
+    name: str,
+    max_hp: int = 10,
+    hp: int = None,
+    race: str = "Unknown",
+    class_: str = "Unknown",
+    personality: str = "Unknown",
+    combat_role: str = "None",
+    quirks: str = "",
+    voice: str = "",
+    trait: str = "",
+):
+    """Add an NPC or enemy to the sidebar. Can be full character or simple enemy."""
+    if hp is None:
+        hp = max_hp
+
+    npc = NPCPlayer(
+        name=name,
+        race=race,
+        char_class=class_,
+        max_hp=max_hp,
+        hp=hp,
+        personality=personality,
+        combat_role=combat_role,
+        quirks=quirks,
+        voice=voice,
+        trait=trait
+    )
+
+    if "npcs" not in st.session_state:
+        st.session_state["npcs"] = []
+
+    st.session_state["npcs"].append(npc)
+    return f"✅ NPC or enemy '{name}' has been added with {hp}/{max_hp} HP."

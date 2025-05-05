@@ -150,7 +150,7 @@ agent = Agent(
     name="DungeonMaster",
     model="openai.gpt-4o",
     instructions=instructions,
-    tools=[roll_dice, sample_npcs, move_to_scene],
+    tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc],
     players=st.session_state.players
 )
 
