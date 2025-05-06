@@ -142,8 +142,8 @@ instructions = (
     "You can use the `roll_dice` tool when needed. "
     "Use vivid storytelling and refer to characters naturally.\n\n"
     f"The following NPCs are present:\n{npc_context}"
-    f"Current script: {st.session_state["script_text"] if "script_text" in st.session_state else ''}"
-    f"Available Scenes: {st.session_state["scene_list"] if "scene_list" in st.session_state else ''}"
+    f"Current script: {st.session_state['script_text'] if 'script_text' in st.session_state else ''}"
+    f"Available Scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
 )
 
 agent = Agent(
