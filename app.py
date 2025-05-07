@@ -143,7 +143,9 @@ instructions = (
     "Use vivid storytelling and refer to characters naturally.\n\n"
     f"The following NPCs are present:\n{npc_context}"
     f"Current script: {st.session_state['script_text'] if 'script_text' in st.session_state else ''}"
-    f"Available Scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
+    f"You should only use the available scenes when you decide to move. If no major scene change, you can stay at the same scene."
+    f"Here are the available scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
+    f"Try to refer to stats when applicable."
 )
 
 agent = Agent(
@@ -195,6 +197,6 @@ render_sidebar(agent.players)
 if "npcs" in st.session_state:
     render_npcs(st.session_state["npcs"])
     
-if "scene_graph_img" in st.session_state:
+if st.session_state.get("show_map") and "scene_graph_img" in st.session_state:
     render_scene_graph_bottom_right(st.session_state["scene_graph_img"])
     # render_scene_graph_right_panel(st.session_state["scene_graph_img"])
