@@ -11,18 +11,30 @@ import matplotlib.pyplot as plt
 import tempfile
 
 class Player:
-    def __init__(self, name, max_hp, hp):
+    def __init__(self, name, max_hp, hp, stats=None):
         self.name = name
         self.max_hp = max_hp
         self.hp = hp
+        self.stats = stats or {
+            "STR": 10,
+            "DEX": 10,
+            "CON": 10,
+            "INT": 10,
+            "WIS": 10,
+            "CHA": 10
+        }
 
     @classmethod
     def from_dict(cls, d):
         return cls(
             name=d["name"],
             max_hp=d.get("max_hp", 20),
-            hp=d.get("hp", d.get("max_hp", 20))
+            hp=d.get("hp", d.get("max_hp", 20)),
+            stats=d.get("stats")
         )
+
+    def status(self):
+        return f"{self.name}: {self.hp}/{self.max_hp} HP"
 
     def take_damage(self, amount):
         self.hp = max(0, self.hp - amount)
@@ -30,12 +42,10 @@ class Player:
     def heal(self, amount):
         self.hp = min(self.max_hp, self.hp + amount)
 
-    def status(self):
-        return f"{self.name}: {self.hp}/{self.max_hp} HP"
 
 class NPCPlayer(Player):
-    def __init__(self, name, max_hp, hp, race, char_class, personality, combat_role, quirks, voice, trait):
-        super().__init__(name, max_hp, hp)
+    def __init__(self, name, max_hp, hp, race, char_class, personality, combat_role, quirks, voice, trait, stats=None):
+        super().__init__(name, max_hp, hp, stats)
         self.race = race
         self.char_class = char_class
         self.personality = personality
@@ -56,7 +66,8 @@ class NPCPlayer(Player):
             combat_role=d.get("combat_role", "None"),
             quirks=d.get("quirks", ""),
             voice=d.get("voice", ""),
-            trait=d.get("trait", "")
+            trait=d.get("trait", ""),
+            stats=d.get("stats")
         )
 
     def to_dict(self):
@@ -70,8 +81,10 @@ class NPCPlayer(Player):
             "combat_role": self.combat_role,
             "quirks": self.quirks,
             "voice": self.voice,
-            "trait": self.trait
+            "trait": self.trait,
+            "stats": self.stats
         }
+
 
 
 def load_npc_pool(path="npcs.json") -> list:
@@ -310,23 +323,42 @@ def build_game_state_summary(players: dict, npcs: list) -> str:
     lines = ["Here is the current status of all characters:"]
 
     for p in players.values():
-        lines.append(f"{p.name}: {p.hp}/{p.max_hp} HP")
+        line = f"{p.name}: {p.hp}/{p.max_hp} HP"
+        if hasattr(p, "stats") and isinstance(p.stats, dict):
+            stat_str = ", ".join(f"{k}: {v}" for k, v in p.stats.items())
+            line += f" | Stats: {stat_str}"
+        lines.append(line)
 
     if npcs:
         for npc in npcs:
-            if hasattr(npc, "hp"):  # support both Player and NPCPlayer
-                lines.append(f"{npc.name}: {npc.hp}/{npc.max_hp} HP")
+            if hasattr(npc, "hp"):
+                line = f"{npc.name}: {npc.hp}/{npc.max_hp} HP"
+                if hasattr(npc, "stats") and isinstance(npc.stats, dict):
+                    stat_str = ", ".join(f"{k}: {v}" for k, v in npc.stats.items())
+                    line += f" | Stats: {stat_str}"
+                lines.append(line)
 
     return "\n".join(lines)
 
+
 def render_sidebar(players):
     with st.sidebar:
+        if "show_map" not in st.session_state:
+            st.session_state["show_map"] = True
+        st.sidebar.checkbox("🗺️ Show Scene Map", key="show_map")
         st.header("🩸 Party HP")
         for player in players.values():
             bar = int(player.hp / player.max_hp * 20)
             st.markdown(f"**{player.name}**")
             st.markdown(f"{'🟥' * bar}{'⬛' * (20 - bar)}")
             st.caption(f"{player.hp}/{player.max_hp} HP")
+
+            # Toggleable stat view
+            if hasattr(player, "stats"):
+                with st.expander("📊 Stats", expanded=False):
+                    for stat, value in player.stats.items():
+                        st.markdown(f"- **{stat}**: {value}")
+
 
 def render_npcs(npcs: list):
     with st.sidebar:
@@ -340,16 +372,25 @@ def render_npcs(npcs: list):
             bar = int(npc.hp / npc.max_hp * 20)
             st.markdown(f"{npc.name} ({npc.char_class} - {npc.race})")
             st.markdown(f"🩸 {'🟥' * bar}{'⬛' * (20 - bar)} ({npc.hp}/{npc.max_hp})")
+
             if isinstance(npc, NPCPlayer):
-                with st.expander("Details"):
+                with st.expander("Details", expanded=False):
+                    if hasattr(npc, "stats") and isinstance(npc.stats, dict):
+                        for stat, value in npc.stats.items():
+                            st.markdown(f"- **{stat}**: {value}")
                     st.markdown(f"- **Personality:** {npc.personality}")
                     st.markdown(f"- **Combat Role:** {npc.combat_role}")
                     st.markdown(f"- **Quirks:** {npc.quirks}")
                     st.markdown(f"- **Voice Style:** {npc.voice}")
                     st.markdown(f"- **Unique Trait:** {npc.trait}")
+
+
+
+
             else:  # fallback
                 with st.expander(f"{npc.name}"):
                     st.markdown(f"🩸 {'🟥' * bar}{'⬛' * (20 - bar)} ({npc.hp}/{npc.max_hp})")
+
                     
 def render_scene_graph_bottom_right(encoded_image: str):
     st.markdown(
@@ -554,18 +595,21 @@ def extract_hp_effect_from_text(client, assistant_text: str, player_names: list,
 
 # @TOOL
 def move_to_scene(scene_name):
-    """Set the current scene to a known scene by title. Use this whenever players move to a place."""
+    """Set the current scene to a known scene by title. Use this whenever players move to a place.
+    Make sure only to use the available scenes provided."""
     scene_data = st.session_state.get("scene_list")
     st.session_state["current_scene"] = scene_name
 
     if not scene_data:
-        return
+        return "No scene data"
 
     graph_path = save_scene_graph_image(scene_data, current_location=scene_name)
     with open(graph_path, "rb") as f:
         encoded_img = base64.b64encode(f.read()).decode()
 
     st.session_state["scene_graph_img"] = encoded_img
+    return "Move successful"
+
 
 # @tool
 def add_npc(

@@ -7,7 +7,8 @@
     "combat_role": "Support",
     "quirks": "Hums lullabies when healing; allergic to cats.",
     "voice": "Soft and melodic",
-    "trait": "Wears a silver locket with a photo of her sister."
+    "trait": "Wears a silver locket with a photo of her sister.",
+    "stats": { "STR": 8, "DEX": 12, "CON": 10, "INT": 13, "WIS": 16, "CHA": 14 }
   },
   {
     "name": "Thorn Blackroot",
@@ -17,7 +18,8 @@
     "combat_role": "Stealth / Damage",
     "quirks": "Never enters a room through the door; obsessed with shiny objects.",
     "voice": "Low and gruff, with a hint of mischief",
-    "trait": "Keeps a journal with coded entries no one can crack."
+    "trait": "Keeps a journal with coded entries no one can crack.",
+    "stats": { "STR": 14, "DEX": 17, "CON": 12, "INT": 10, "WIS": 10, "CHA": 8 }
   },
   {
     "name": "Elda Farwatch",
@@ -27,7 +29,8 @@
     "combat_role": "Magic Support / Control",
     "quirks": "Speaks too fast when excited; wears mismatched socks.",
     "voice": "Nervous and high-pitched",
-    "trait": "Has a floating spellbook that follows her like a puppy."
+    "trait": "Has a floating spellbook that follows her like a puppy.",
+    "stats": { "STR": 6, "DEX": 12, "CON": 10, "INT": 17, "WIS": 14, "CHA": 9 }
   },
   {
     "name": "Durgan Stoneheart",
@@ -37,7 +40,8 @@
     "combat_role": "Frontline Tank / Damage",
     "quirks": "Talks to his axe like it's a person; hates stairs.",
     "voice": "Loud and booming",
-    "trait": "Beard is braided into the shape of a hammer."
+    "trait": "Beard is braided into the shape of a hammer.",
+    "stats": { "STR": 17, "DEX": 10, "CON": 16, "INT": 8, "WIS": 10, "CHA": 9 }
   },
   {
     "name": "Mira Velen",
@@ -47,7 +51,8 @@
     "combat_role": "Support / Crowd Control",
     "quirks": "Rhymes when nervous; carries perfume for every mood.",
     "voice": "Velvety and theatrical",
-    "trait": "Her lute can shoot sparks when she strums hard."
+    "trait": "Her lute can shoot sparks when she strums hard.",
+    "stats": { "STR": 8, "DEX": 14, "CON": 10, "INT": 12, "WIS": 10, "CHA": 17 }
   },
   {
     "name": "Kel Emberwatch",
@@ -57,7 +62,8 @@
     "combat_role": "Ranged DPS / Scout",
     "quirks": "Sleeps with one eye open; names all their arrows.",
     "voice": "Low, calm, slightly monotone",
-    "trait": "Always accompanied by a hawk named Whisper."
+    "trait": "Always accompanied by a hawk named Whisper.",
+    "stats": { "STR": 10, "DEX": 16, "CON": 12, "INT": 12, "WIS": 15, "CHA": 9 }
   },
   {
     "name": "Tavi Moonsoul",
@@ -67,7 +73,8 @@
     "combat_role": "Healer / Buffer",
     "quirks": "Quotes scripture constantly; fastidious about cleanliness.",
     "voice": "Firm and clear",
-    "trait": "Eyes glow faintly in the dark."
+    "trait": "Eyes glow faintly in the dark.",
+    "stats": { "STR": 12, "DEX": 10, "CON": 14, "INT": 12, "WIS": 17, "CHA": 13 }
   },
   {
     "name": "Rook Ashbrand",
@@ -77,7 +84,8 @@
     "combat_role": "Magic DPS / Debuffer",
     "quirks": "Talks to shadows; refuses to remove gloves.",
     "voice": "Smooth, deep, and slow-paced",
-    "trait": "His cloak absorbs light unnaturally."
+    "trait": "His cloak absorbs light unnaturally.",
+    "stats": { "STR": 8, "DEX": 12, "CON": 11, "INT": 15, "WIS": 13, "CHA": 16 }
   },
   {
     "name": "Nyra Dawnsworn",
@@ -87,7 +95,8 @@
     "combat_role": "Tank / Support",
     "quirks": "Keeps a diary titled 'Knightly Thoughts'; salutes before battle.",
     "voice": "Proud and commanding",
-    "trait": "Armor glows slightly in sunlight."
+    "trait": "Armor glows slightly in sunlight.",
+    "stats": { "STR": 16, "DEX": 10, "CON": 15, "INT": 10, "WIS": 12, "CHA": 14 }
   },
   {
     "name": "Zekk Tinkbolt",
@@ -97,6 +106,7 @@
     "combat_role": "Support / Utility",
     "quirks": "Invents at least one new gadget per day (half explode).",
     "voice": "Fast-talking and squeaky",
-    "trait": "Wears goggles with four lenses that constantly flip."
+    "trait": "Wears goggles with four lenses that constantly flip.",
+    "stats": { "STR": 7, "DEX": 14, "CON": 10, "INT": 17, "WIS": 11, "CHA": 13 }
   }
 ]
