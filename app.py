@@ -146,13 +146,16 @@ instructions = (
     f"You should only use the available scenes when you decide to move. If no major scene change, you can stay at the same scene."
     f"Here are the available scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
     f"Try to refer to stats when applicable."
+    "When an NPC’s attitude toward the party should change based on game events or history, "
+    "call the `set_npc_alignment` tool with the NPC’s name and new alignment ('ally','enemy','neutral').\n"
+    "For example: @tool set_npc_alignment(name=\"Goblin Chief\", alignment=\"enemy\").\n"
 )
 
 agent = Agent(
     name="DungeonMaster",
     model="openai.gpt-4o",
     instructions=instructions,
-    tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc],
+    tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc, set_npc_alignment],
     players=st.session_state.players
 )
 

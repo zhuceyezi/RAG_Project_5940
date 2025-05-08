@@ -44,7 +44,7 @@ class Player:
 
 
 class NPCPlayer(Player):
-    def __init__(self, name, max_hp, hp, race, char_class, personality, combat_role, quirks, voice, trait, stats=None):
+    def __init__(self, name, max_hp, hp, race, char_class, personality, combat_role, quirks, voice, trait, alignment: str = "neutral",stats=None):
         super().__init__(name, max_hp, hp, stats)
         self.race = race
         self.char_class = char_class
@@ -53,6 +53,7 @@ class NPCPlayer(Player):
         self.quirks = quirks
         self.voice = voice
         self.trait = trait
+        self.alignment = alignment
 
     @classmethod
     def from_dict(cls, d):
@@ -67,7 +68,8 @@ class NPCPlayer(Player):
             quirks=d.get("quirks", ""),
             voice=d.get("voice", ""),
             trait=d.get("trait", ""),
-            stats=d.get("stats")
+            stats=d.get("stats"),
+            alignment=d.get("alignment", "neutral"),
         )
 
     def to_dict(self):
@@ -82,6 +84,7 @@ class NPCPlayer(Player):
             "quirks": self.quirks,
             "voice": self.voice,
             "trait": self.trait,
+            "alignment": self.alignment,
             "stats": self.stats
         }
 
@@ -332,11 +335,17 @@ def build_game_state_summary(players: dict, npcs: list) -> str:
     if npcs:
         for npc in npcs:
             if hasattr(npc, "hp"):
-                line = f"{npc.name}: {npc.hp}/{npc.max_hp} HP"
+                line = f"{npc.name}: {npc.hp}/{npc.max_hp} HP  (alignment: {npc.alignment})"
                 if hasattr(npc, "stats") and isinstance(npc.stats, dict):
                     stat_str = ", ".join(f"{k}: {v}" for k, v in npc.stats.items())
                     line += f" | Stats: {stat_str}"
                 lines.append(line)
+
+    # Add NPC summary
+    if st.session_state.get("chat_log"):
+        history = [m["content"] for m in st.session_state.chat_log if m["role"]!="tool"][-3:]
+        lines.append("Recent events:")
+        lines.extend(f"- {h}" for h in history)
 
     return "\n".join(lines)
 
@@ -371,6 +380,7 @@ def render_npcs(npcs: list):
         for npc in npcs:
             bar = int(npc.hp / npc.max_hp * 20)
             st.markdown(f"{npc.name} ({npc.char_class} - {npc.race})")
+            st.caption(f"Alignment：{npc.alignment}")
             st.markdown(f"🩸 {'🟥' * bar}{'⬛' * (20 - bar)} ({npc.hp}/{npc.max_hp})")
 
             if isinstance(npc, NPCPlayer):
@@ -623,6 +633,7 @@ def add_npc(
     quirks: str = "",
     voice: str = "",
     trait: str = "",
+    alignment: str = ""
 ):
     """Add an NPC or enemy to the sidebar. Can be full character or simple enemy."""
     if hp is None:
@@ -638,7 +649,8 @@ def add_npc(
         combat_role=combat_role,
         quirks=quirks,
         voice=voice,
-        trait=trait
+        trait=trait,
+        alignment=alignment,
     )
 
     if "npcs" not in st.session_state:
@@ -646,3 +658,19 @@ def add_npc(
 
     st.session_state["npcs"].append(npc)
     return f"✅ NPC or enemy '{name}' has been added with {hp}/{max_hp} HP."
+
+# @tool
+def set_npc_alignment(name: str, alignment: str):
+    """
+    Modify the alignment of an NPC.
+    Set alignment to one of the three with information and chat so far
+    alignment options: 'ally', 'enemy', 'neutral'.
+    """
+    if "npcs" not in st.session_state:
+        return "No NPCs available in session."
+
+    for npc in st.session_state["npcs"]:
+        if npc.name.lower() == name.lower():
+            npc.alignment = alignment
+            return f"✅ NPC '{npc.name}' alignment set to '{alignment}'."
+    return f"❌ NPC named '{name}' not found."
