@@ -97,7 +97,94 @@ class NPCPlayer(Player):
 def load_npc_pool(path="npcs.json") -> list:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
-    
+
+
+def save_scene_graph_image(scene_data, current_location=None):
+    import matplotlib.pyplot as plt
+    import networkx as nx
+    import tempfile
+    from matplotlib.patches import Patch
+
+    # Set a D&D themed style for the graph
+    plt.style.use('dark_background')
+
+    G = nx.DiGraph()
+    labels = {}
+    node_colors = []
+    edge_colors = []
+
+    # Create nodes and edges
+    for scene in scene_data:
+        title = scene["title"]
+        G.add_node(title)
+        labels[title] = f'{scene["scene_number"]}. {title}'
+        for conn in scene.get("connections", []):
+            G.add_edge(title, conn)
+            edge_colors.append('#d4af37')  # Gold color for edges
+
+    # Use a more organic layout
+    pos = nx.spring_layout(G, k=0.5, seed=42)  # k controls the spacing
+
+    # Set node colors - current location is highlighted
+    for node in G.nodes:
+        if current_location and node.lower() == current_location.lower():
+            node_colors.append("#ff5733")  # Bright orange-red for current location
+        else:
+            node_colors.append("#8b4513")  # Saddle brown for other locations
+
+    # Create the figure with a parchment-like background
+    fig, ax = plt.subplots(figsize=(10, 8), facecolor='#f5e8c9')
+    ax.set_facecolor('#f5e8c9')  # Parchment color
+
+    # Draw the graph with enhanced styling
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=2500,
+                           edgecolors='black', linewidths=2, alpha=0.9)
+
+    nx.draw_networkx_edges(G, pos, arrowstyle="-|>", arrowsize=20,
+                           edge_color=edge_colors, width=2,
+                           connectionstyle="arc3,rad=0.1")
+
+    nx.draw_networkx_labels(G, pos, labels, font_size=10,
+                            font_family='serif', font_weight='bold',
+                            font_color='white')
+
+    # Add a decorative border to make it look like an old map
+    border_width = 0.05
+    ax.set_xlim(min(xx for xx, yy in pos.values()) - border_width,
+                max(xx for xx, yy in pos.values()) + border_width)
+    ax.set_ylim(min(yy for xx, yy in pos.values()) - border_width,
+                max(yy for xx, yy in pos.values()) + border_width)
+
+    # Add a title with fantasy font
+    plt.title("Adventure Map", fontsize=20, fontweight='bold',
+              fontfamily='serif', color='#8b4513')
+
+    # Add a decorative compass rose
+    compass_pos = (min(xx for xx, yy in pos.values()) + 0.05,
+                   min(yy for xx, yy in pos.values()) + 0.05)
+    compass_size = 0.05
+
+    # Add legend with a parchment-like background
+    legend_elements = [
+        Patch(facecolor='#ff5733', edgecolor='black', label='Current Location'),
+        Patch(facecolor='#8b4513', edgecolor='black', label='Other Locations')
+    ]
+    legend = plt.legend(handles=legend_elements, loc='lower right',
+                        frameon=True, facecolor='#f5e8c9',
+                        edgecolor='#8b4513', fontsize=10)
+    legend.get_frame().set_linewidth(2)
+
+    # Turn off axis
+    plt.axis("off")
+    plt.tight_layout()
+
+    # Save the figure
+    tmpfile = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    plt.savefig(tmpfile.name, format="png", dpi=300, bbox_inches="tight",
+                facecolor='#f5e8c9', edgecolor='#8b4513')
+    plt.close()
+    return tmpfile.name
+
 def save_scene_graph_with_map_background(scene_data, map_image_path, current_location=None, custom_font=None):
     """Generate a scene graph image with fantasy map as background."""
     import matplotlib.pyplot as plt
@@ -128,14 +215,14 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
     # Create a figure with the same aspect ratio as the map
     fig = plt.figure(figsize=(18, 18/aspect_ratio))  # 12 * 1.5 = 18 for 1.5x larger
     ax = fig.add_subplot(111)
-    
+
     # Display the map
     ax.imshow(map_img, extent=[0, 1, 0, 1])
-    
+
     # Use a different layout that keeps nodes more central
     # Start with spring layout
     pos = nx.spring_layout(G, seed=42)
-    
+
     # Adjust positions to ensure they stay within map boundaries with padding
     padding = 0.15  # Padding from the edges (15%)
     for node in pos:
@@ -145,7 +232,7 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
             max(padding, min(1-padding, x)),
             max(padding, min(1-padding, y))
         )
-    
+
     # Set node colors based on current location
     for node in G.nodes:
         if current_location and node.lower() == current_location.lower():
@@ -154,13 +241,13 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
             node_colors.append("lightblue")
 
     # Draw semi-transparent nodes with thick black outline for visibility
-    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=1200, alpha=0.8, 
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=1200, alpha=0.8,
                          edgecolors='black', linewidths=2, ax=ax)
-    
+
     # Draw edges with arrows
     nx.draw_networkx_edges(G, pos, arrowstyle="->", arrowsize=15, edge_color="black",
                          width=2, alpha=0.8, ax=ax)
-    
+
     # Draw text with better visibility against any background
     # Create a text outline effect
     for node, (x, y) in pos.items():
@@ -168,16 +255,16 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
         # Draw text outline in black
         offsets = [(1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)]
         for dx, dy in offsets:
-            ax.text(x + dx*0.005, y + dy*0.005, text, 
+            ax.text(x + dx*0.005, y + dy*0.005, text,
                     horizontalalignment='center', verticalalignment='center',
                     color='black', fontsize=10, fontweight='bold',
                     family=custom_font if custom_font else 'sans-serif',
                     zorder=5)
-    
+
     # Then draw white text on top of the outline
     for node, (x, y) in pos.items():
         text = labels[node]
-        ax.text(x, y, text, 
+        ax.text(x, y, text,
                 horizontalalignment='center', verticalalignment='center',
                 color='white', fontsize=10, fontweight='bold',
                 family=custom_font if custom_font else 'sans-serif',
@@ -192,14 +279,15 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
 
     # Remove axes to show only the map
     plt.axis('off')
-    
+
     # Save the result
     tmpfile = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
     plt.tight_layout(pad=0)
     plt.savefig(tmpfile.name, format="png", bbox_inches="tight", dpi=300)
     plt.close()
-    
+
     return tmpfile.name
+
 
 
 def sample_npcs(n: int) -> dict:
@@ -211,6 +299,26 @@ def sample_npcs(n: int) -> dict:
     print(f"Sampled {len(sampled)} NPCs")
 
     npc_players = [NPCPlayer.from_dict(npc) for npc in sampled]
+    # Add random HP values to make it more gamelike
+    for npc in npc_players:
+        class_hp_base = {
+            "Fighter": (25, 35),
+            "Rogue": (15, 25),
+            "Wizard": (10, 20),
+            "Cleric": (18, 28),
+            "Bard": (15, 22),
+            "Paladin": (22, 32),
+            "Warlock": (12, 22),
+            "Ranger": (18, 28),
+            "Artificer": (15, 25),
+            "Healer": (18, 28),
+            "Scholar": (10, 18)
+        }
+
+        base_range = class_hp_base.get(npc.char_class, (15, 25))
+        npc.max_hp = random.randint(*base_range)
+        npc.hp = npc.max_hp
+
     return {"npcs": npc_players}
 
 
@@ -349,7 +457,7 @@ def execute_tool_call(tool_call, tools_map):
     else:
         name = tool_call.function.name
         args = json.loads(tool_call.function.arguments)
-    
+
     print(f"Assistant is calling: {name}({args})")
 
     result = tools_map[name](**args)
@@ -427,70 +535,172 @@ def build_game_state_summary(players: dict, npcs: list) -> str:
 
 def render_sidebar(players):
     with st.sidebar:
+        st.markdown("""
+        <h1 style="text-align: center; font-family: 'Cinzel', serif; color: #fdf3d0; 
+                   text-shadow: 0 0 5px #6c3e00; margin-bottom: 20px;">
+            Adventure Tracker
+        </h1>
+        """, unsafe_allow_html=True)
+
         if "show_map" not in st.session_state:
             st.session_state["show_map"] = True
         st.sidebar.checkbox("🗺️ Show Adventure Map", key="show_map")
-        
+
         # Add this font selection code
         if "map_font" not in st.session_state:
             st.session_state["map_font"] = "serif"  # Default font
-        
+
         # Font selection for node labels
         font_options = ["serif", "sans-serif", "monospace", "fantasy", "cursive"]
         selected_font = st.sidebar.selectbox(
-            "Node Label Font", 
+            "Node Label Font",
             options=font_options,
             index=font_options.index(st.session_state["map_font"])
         )
         st.session_state["map_font"] = selected_font
-        
+
         st.header("🩸 Party HP")
         for player in players.values():
-            bar = int(player.hp / player.max_hp * 20)
-            st.markdown(f"**{player.name}**")
-            st.markdown(f"{'🟥' * bar}{'⬛' * (20 - bar)}")
-            st.caption(f"{player.hp}/{player.max_hp} HP")
+            # Calculate HP percentage
+            hp_percent = int(player.hp / player.max_hp * 100)
 
-            # Toggleable stat view
+            # Create a custom styled player card
+            st.markdown(f"""
+            <div style="background-color: rgba(40, 24, 8, 0.7); padding: 10px; border-radius: 5px; 
+                       margin: 10px 0; border: 1px solid #fdf3d0;">
+                <h3 style="font-family: 'Cinzel', serif; margin: 0; color: #fdf3d0; 
+                          text-shadow: 0 0 3px #6c3e00;">{player.name}</h3>
+                
+                <div class="hp-bar-container">
+                    <div class="hp-bar" style="width: {hp_percent}%;"></div>
+                </div>
+                <p style="text-align: center; margin: 5px 0; color: #fdf3d0;">
+                    {player.hp}/{player.max_hp} HP
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Toggleable stat view with styled expander
             if hasattr(player, "stats"):
-                with st.expander("📊 Stats", expanded=False):
+                with st.expander("📊 Character Stats", expanded=False):
+                    # Create a styled stat block
+                    stat_html = "<div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px;'>"
+
                     for stat, value in player.stats.items():
-                        st.markdown(f"- **{stat}**: {value}")
+                        # Calculate the modifier
+                        modifier = (value - 10) // 2
+                        mod_sign = "+" if modifier >= 0 else ""
+
+                        stat_html += f"""
+                        <div style='background-color: rgba(60, 34, 18, 0.7); padding: 5px; 
+                                   border-radius: 5px; text-align: center;'>
+                            <div style='font-weight: bold; color: #fdf3d0;'>{stat}</div>
+                            <div style='font-size: 1.2em; color: #fdf3d0;'>{value}</div>
+                            <div style='color: {"#4dbd74" if modifier >= 0 else "#f86c6b"};'>
+                                {mod_sign}{modifier}
+                            </div>
+                        </div>
+                        """
+
+                    stat_html += "</div>"
+                    st.markdown(stat_html, unsafe_allow_html=True)
 
 
 def render_npcs(npcs: list):
     with st.sidebar:
-        st.header("🧍 NPCs")
+        st.markdown("""
+        <h2 style="font-family: 'Cinzel', serif; color: #fdf3d0; border-bottom: 2px solid #fdf3d0; 
+                  padding-bottom: 10px; margin-top: 30px;">
+            🧙 NPCs & Enemies
+        </h2>
+        """, unsafe_allow_html=True)
 
         if not npcs:
-            st.info("No NPCs generated yet.")
+            st.info("No NPCs have joined your adventure yet.")
             return
 
         for npc in npcs:
             bar = int(npc.hp / npc.max_hp * 20)
-            st.markdown(f"{npc.name} ({npc.char_class} - {npc.race})")
+            # st.markdown(f"{npc.name} ({npc.char_class} - {npc.race})")
             st.caption(f"Alignment：{npc.alignment}")
-            st.markdown(f"🩸 {'🟥' * bar}{'⬛' * (20 - bar)} ({npc.hp}/{npc.max_hp})")
+            # st.markdown(f"🩸 {'🟥' * bar}{'⬛' * (20 - bar)} ({npc.hp}/{npc.max_hp})")
+            # Calculate HP percentage
+            hp_percent = int(npc.hp / npc.max_hp * 100)
+
+            # Different background colors based on combat role
+            bg_colors = {
+                "Support": "rgba(75, 119, 190, 0.7)",      # Blue for support
+                "Healer": "rgba(82, 157, 82, 0.7)",        # Green for healers
+                "Tank": "rgba(162, 118, 74, 0.7)",         # Brown for tanks
+                "Damage": "rgba(190, 75, 75, 0.7)",        # Red for damage
+                "Stealth": "rgba(75, 75, 75, 0.7)",        # Dark gray for stealth
+                "Magic": "rgba(147, 75, 190, 0.7)"         # Purple for magic users
+            }
+
+            # Determine background color based on role
+            role_keywords = ["Support", "Healer", "Tank", "Damage", "DPS", "Stealth", "Magic"]
+            bg_color = "rgba(40, 24, 8, 0.7)"  # Default color
+
+            for keyword in role_keywords:
+                if keyword.lower() in npc.combat_role.lower():
+                    bg_color = bg_colors.get(keyword, bg_color)
+                    break
+
+            st.markdown(f"""
+            <div style="background-color: {bg_color}; padding: 10px; border-radius: 5px; 
+                       margin: 10px 0; border: 1px solid #fdf3d0;">
+                <h3 style="font-family: 'Cinzel', serif; margin: 0; color: #fdf3d0; 
+                          text-shadow: 0 0 3px #6c3e00;">{npc.name}</h3>
+                <p style="color: #fdf3d0; margin: 2px 0; font-style: italic;">
+                    {npc.race} {npc.char_class}
+                </p>
+                
+                <div class="hp-bar-container">
+                    <div class="hp-bar" style="width: {hp_percent}%;"></div>
+                </div>
+                <p style="text-align: center; margin: 5px 0; color: #fdf3d0;">
+                    {npc.hp}/{npc.max_hp} HP
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
 
             if isinstance(npc, NPCPlayer):
-                with st.expander("Details", expanded=False):
+                with st.expander("Character Details", expanded=False):
                     if hasattr(npc, "stats") and isinstance(npc.stats, dict):
+                        # Create a styled stat block
+                        stat_html = "<div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px;'>"
+
                         for stat, value in npc.stats.items():
-                            st.markdown(f"- **{stat}**: {value}")
-                    st.markdown(f"- **Personality:** {npc.personality}")
-                    st.markdown(f"- **Combat Role:** {npc.combat_role}")
-                    st.markdown(f"- **Quirks:** {npc.quirks}")
-                    st.markdown(f"- **Voice Style:** {npc.voice}")
-                    st.markdown(f"- **Unique Trait:** {npc.trait}")
+                            # Calculate the modifier
+                            modifier = (value - 10) // 2
+                            mod_sign = "+" if modifier >= 0 else ""
 
+                            stat_html += f"""
+                            <div style='background-color: rgba(60, 34, 18, 0.7); padding: 5px; 
+                                       border-radius: 5px; text-align: center;'>
+                                <div style='font-weight: bold; color: #fdf3d0;'>{stat}</div>
+                                <div style='font-size: 1.2em; color: #fdf3d0;'>{value}</div>
+                                <div style='color: {"#4dbd74" if modifier >= 0 else "#f86c6b"};'>
+                                    {mod_sign}{modifier}
+                                </div>
+                            </div>
+                            """
 
+                        stat_html += "</div>"
+                        st.markdown(stat_html, unsafe_allow_html=True)
 
-
+                    st.markdown(f"<div style='color: #fdf3d0;'><strong>Personality:</strong> {npc.personality}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='color: #fdf3d0;'><strong>Combat Role:</strong> {npc.combat_role}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='color: #fdf3d0;'><strong>Quirks:</strong> {npc.quirks}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='color: #fdf3d0;'><strong>Voice:</strong> {npc.voice}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='color: #fdf3d0;'><strong>Trait:</strong> {npc.trait}</div>", unsafe_allow_html=True)
             else:  # fallback
                 with st.expander(f"{npc.name}"):
-                    st.markdown(f"🩸 {'🟥' * bar}{'⬛' * (20 - bar)} ({npc.hp}/{npc.max_hp})")
+                    # Calculate HP bar without using 'bar' variable
+                    hp_display = f"🩸 {'🟥' * int(npc.hp / npc.max_hp * 20)}{'⬛' * (20 - int(npc.hp / npc.max_hp * 20))} ({npc.hp}/{npc.max_hp})"
+                    st.markdown(hp_display)
 
-                    
+
 def render_scene_graph_bottom_right(encoded_image: str):
     """Display the scene graph with perfect fitting for the map and nodes."""
     st.markdown(
@@ -539,6 +749,7 @@ def render_scene_graph_bottom_right(encoded_image: str):
         unsafe_allow_html=True
     )
 
+    
 def render_scene_graph_right_panel(encoded_image: str):
     st.markdown(
         f"""
@@ -574,7 +785,7 @@ def remove_npc(name: str):
     ]
 
     if len(st.session_state["npcs"]) < original_count:
-        st.info(f"💀 NPC '{name}' has fallen and was removed from the sidebar.")
+        st.info(f"💀 NPC '{name}' has fallen and was removed from the party.")
 
 
 def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o"):
@@ -637,10 +848,9 @@ def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o")
         return
 
     if not effects:
-        st.info("ℹ️ No HP effects detected.")
         return
 
-    # Apply each effect
+    # Apply each effect with styled notifications
     for effect in effects:
         player = players.get(effect["target"])
 
@@ -652,7 +862,6 @@ def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o")
                     break
 
         if not player:
-            st.warning(f"❓ Character '{effect['target']}' not found among players or NPCs.")
             continue
 
         amount = effect["amount"]
@@ -673,23 +882,39 @@ def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o")
                 try:
                     amount = int(raw_amount)
                 except ValueError:
-                    st.warning(f"⚠️ Invalid amount: '{raw_amount}' for {player.name}")
                     continue
         else:
             amount = int(raw_amount)
 
-        # Apply effect
+        # Apply effect with fantasy-styled notifications
         if kind == "heal":
             player.heal(amount)
-            st.success(f"🟢 {player.name} heals {amount} → {player.status()}")
+            st.markdown(f"""
+            <div style="background-color: rgba(82, 157, 82, 0.7); color: white; padding: 10px; 
+                       border-radius: 5px; margin: 10px 0; border: 1px solid #4dbd74; 
+                       font-family: 'Fondamento', cursive;">
+                ✨ {player.name} is healed for {amount} points of vitality! ({player.hp}/{player.max_hp} HP)
+            </div>
+            """, unsafe_allow_html=True)
         elif kind == "damage":
             player.take_damage(amount)
-            st.error(f"🔴 {player.name} takes {amount} damage → {player.status()}")
-            # ✅ Remove if it's an NPC and HP hits zero
+            st.markdown(f"""
+            <div style="background-color: rgba(190, 75, 75, 0.7); color: white; padding: 10px; 
+                       border-radius: 5px; margin: 10px 0; border: 1px solid #f86c6b; 
+                       font-family: 'Fondamento', cursive;">
+                🗡️ {player.name} takes {amount} points of damage! ({player.hp}/{player.max_hp} HP)
+            </div>
+            """, unsafe_allow_html=True)
+            # Remove if it's an NPC and HP hits zero
             if player.hp <= 0 and "npcs" in st.session_state and player in st.session_state["npcs"]:
                 remove_npc(player.name)
-        else:
-            st.warning(f"⚠️ Unknown effect type: {kind}")
+                st.markdown(f"""
+                <div style="background-color: rgba(0, 0, 0, 0.7); color: white; padding: 10px; 
+                           border-radius: 5px; margin: 10px 0; border: 1px solid #6a0000; 
+                           font-family: 'Fondamento', cursive; text-align: center;">
+                    ☠️ {player.name} has fallen in battle!
+                </div>
+                """, unsafe_allow_html=True)
 
 
 def extract_hp_effect_from_text(client, assistant_text: str, player_names: list, model="openai.gpt-4o") -> dict | None:
@@ -727,12 +952,12 @@ def move_to_scene(scene_name):
     st.session_state["current_scene"] = scene_name
 
     if not scene_data:
-        return "No scene data"
+        return "No scene data available"
 
     # If we have a base map image, use it as background
     if "base_map_path" in st.session_state:
         graph_path = save_scene_graph_with_map_background(
-            scene_data, 
+            scene_data,
             st.session_state["base_map_path"],
             current_location=scene_name,
             custom_font=st.session_state.get("map_font", "serif")
@@ -755,7 +980,7 @@ def move_to_scene(scene_name):
         else:
             # Fallback to regular scene graph
             graph_path = save_scene_graph_image(scene_data, current_location=scene_name)
-    
+
     with open(graph_path, "rb") as f:
         encoded_img = base64.b64encode(f.read()).decode()
 
@@ -806,28 +1031,28 @@ def generate_map_image(client, scene_data):
     """Generate a fantasy map image with truly correct positioning"""
     try:
         import networkx as nx
-        
+
         # Create a graph to calculate node positions
         G = nx.DiGraph()
-        
+
         # Add all nodes and connections
         for scene in scene_data:
             title = scene["title"]
             G.add_node(title)
             for conn in scene.get("connections", []):
                 G.add_edge(title, conn)
-        
+
         # Calculate node positions with a fixed seed
         raw_pos = nx.spring_layout(G, seed=42)
-        
+
         # Normalize coordinates to [0,1] range
         normalized_pos = {}
         for node, (x, y) in raw_pos.items():
             normalized_pos[node] = ((x + 1) / 2, (y + 1) / 2)
-        
+
         # Store for the overlay to use
         st.session_state["node_positions"] = normalized_pos
-        
+
         # FINAL CORRECTED position mapping
         def coords_to_position(x, y):
             # Horizontal position (5 regions) - these are correct
@@ -841,7 +1066,7 @@ def generate_map_image(client, scene_data):
                 h_pos = "right"
             else:
                 h_pos = "far right"
-                
+
             # Vertical position (5 regions) - TRULY CORRECT VERSION NOW
             # Lower Y values (0.0-0.2) are at the TOP of the map
             # Higher Y values (0.8-1.0) are at the BOTTOM of the map
@@ -855,34 +1080,34 @@ def generate_map_image(client, scene_data):
                 v_pos = "upper middle" # Between middle and bottom
             else:
                 v_pos = "upper"        # BOTTOM of the map (high y value)
-            
+
             # Special case for true center
             if h_pos == "center" and v_pos == "middle":
                 return "center"
-            
+
             return f"{v_pos} {h_pos}"
-        
+
         # Build scene descriptions with corrected positions
         scene_descriptions = []
         for scene in scene_data:
             title = scene["title"]
             location = scene.get("location", "")
             scene_num = scene.get("scene_number", 0)
-            
+
             # Get normalized coordinates
             x, y = normalized_pos[title]
-            
+
             # Convert to correct descriptive position
             position = coords_to_position(x, y)
-            
+
             # Debug info
             print(f"Scene {scene_num}: {title} - positioned in the {position} area at ({x:.2f}, {y:.2f})")
-            
+
             # Format the scene description
             scene_descriptions.append(
                 f"Scene {scene_num}: {title} in {location} - located in the {position} area"
             )
-        
+
         # Create the map generation prompt
         enhanced_prompt = (
             f"Create a single unified fantasy map showing these locations:\n\n"
@@ -895,12 +1120,12 @@ def generate_map_image(client, scene_data):
             f"DO NOT include ANY text, labels, or writing. "
             f"Make it a square map with equal width and height."
         )
-        
+
         # Print the exact prompt that will be sent to Imagen 3
         print("\n=== Prompt being sent to Imagen 3 ===")
         print(enhanced_prompt)
         print("=====================================\n")
-        
+
         # Generate the image
         response = client.images.generate(
             model="google.imagen-3.0-generate",
@@ -908,7 +1133,7 @@ def generate_map_image(client, scene_data):
             n=1,
             size="1024x1024"
         )
-        
+
         # Extract and save image data
         if hasattr(response, 'data') and len(response.data) > 0:
             if hasattr(response.data[0], "b64_json") and response.data[0].b64_json:
@@ -922,15 +1147,15 @@ def generate_map_image(client, scene_data):
                     return None
             else:
                 return None
-            
+
             # Save the image
             img_path = "static/base_map.png"
             os.makedirs(os.path.dirname(img_path), exist_ok=True)
             with open(img_path, "wb") as f:
                 f.write(image_data)
-            
+
             return img_path
-        
+
         return None
     except Exception as e:
         print(f"Error generating map: {str(e)}")
@@ -968,10 +1193,10 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
     # Create a figure with the same aspect ratio as the map
     fig = plt.figure(figsize=(18, 18/aspect_ratio))  # 12 * 1.5 = 18 for 1.5x larger
     ax = fig.add_subplot(111)
-    
+
     # Display the map with slightly reduced extent to allow for labels
     ax.imshow(map_img, extent=[0.05, 0.95, 0.05, 0.95])  # 5% padding on each side
-    
+
     # Use positions from session state if available
     if "node_positions" in st.session_state:
         pos = st.session_state["node_positions"]
@@ -983,7 +1208,7 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
         for node, (x, y) in raw_pos.items():
             pos[node] = ((x + 1) / 2, (y + 1) / 2)
         print("Regenerated node positions with NetworkX")
-    
+
     # Move node positions slightly inward if they're too close to the edges
     padding = 0.12  # 12% padding from edges
     for node in pos:
@@ -991,7 +1216,7 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
         x = max(padding, min(1-padding, x))
         y = max(padding, min(1-padding, y))
         pos[node] = (x, y)
-    
+
     # Set node colors based on current location
     for node in G.nodes:
         if current_location and node.lower() == current_location.lower():
@@ -1002,17 +1227,17 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
     # Draw nodes with thick black outline for visibility - LARGER
     nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=2500, alpha=0.8,  # Increased from 1800 to 2500
                           edgecolors='black', linewidths=3, ax=ax)  # Thicker outlines
-    
+
     # Draw edges with arrows - THICKER
     nx.draw_networkx_edges(G, pos, arrowstyle="->", arrowsize=20, edge_color="black",  # Larger arrows
                           width=3, alpha=0.8, ax=ax)  # Thicker lines
-    
+
     # Draw text with full labels - LARGER
     for node, (x, y) in pos.items():
         text = labels[node]
-        
+
         # Draw text with black background for better visibility
-        ax.text(x, y, text, 
+        ax.text(x, y, text,
                 horizontalalignment='center', verticalalignment='center',
                 color='white', fontsize=14,  # Increased from 12 to 14
                 fontweight='bold',  # Make it bold for better visibility
@@ -1030,12 +1255,12 @@ def save_scene_graph_with_map_background(scene_data, map_image_path, current_loc
 
     # Remove axes
     plt.axis('off')
-    
+
     # Save with proper tight layout to avoid white space
     tmpfile = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
     plt.savefig(tmpfile.name, format="png", bbox_inches="tight", pad_inches=0, dpi=300)
     plt.close()
-    
+
     return tmpfile.name
 
 def save_scene_graph_image(scene_data, current_location=None, return_positions=False, custom_font=None):
@@ -1062,7 +1287,7 @@ def save_scene_graph_image(scene_data, current_location=None, return_positions=F
 
     # Set up the figure and plotting
     plt.figure(figsize=(6, 6))
-    
+
     # Set node colors based on current location
     for node in G.nodes:
         if current_location and node.lower() == current_location.lower():
@@ -1074,7 +1299,7 @@ def save_scene_graph_image(scene_data, current_location=None, return_positions=F
     font_props = {'font_size': 10}
     if custom_font:
         font_props['font_family'] = custom_font
-    
+
     nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=2200)
     nx.draw_networkx_edges(G, pos, arrowstyle="->", arrowsize=20, edge_color="gray")
     nx.draw_networkx_labels(G, pos, labels, **font_props)
@@ -1091,7 +1316,7 @@ def save_scene_graph_image(scene_data, current_location=None, return_positions=F
     plt.tight_layout(pad=2)
     plt.savefig(tmpfile.name, format="png", bbox_inches="tight")
     plt.close()
-    
+
     # Return both the image path and positions if requested
     if return_positions:
         return tmpfile.name, pos
@@ -1129,13 +1354,13 @@ def calculate_attack(attacker_name: str,
                      weapon: dict = None) -> dict:
     """
     Calculate attack results between two entities.
-    
+
     Args:
         attacker_name: Name of the attacking entity
         defender_name: Name of the defending entity
         mode: Attack mode ("melee", "ranged", or "spell") - if None, inferred from class
         weapon: Optional weapon data with keys like "damage" and "attack_bonus"
-        
+
     Returns:
         Dictionary with attack results
     """
@@ -1167,17 +1392,17 @@ def calculate_attack(attacker_name: str,
         stat_key = "DEX"
     else:  # spell
         stat_key = "INT"  # Could extend to use WIS/CHA for different caster classes
-    
+
     # Calculate ability modifier: (stat-10)/2 rounded down
     base_mod = math.floor((stats.get(stat_key, 10) - 10) / 2)
-    
+
     # Apply racial and class bonuses
     class_bonus = CLASS_BONUS.get(atk.char_class, {}).get(stat_key, 0)
     racial_bonus = RACIAL_BONUS.get(atk.race, {}).get(stat_key, 0)
-    
+
     # Weapon bonus
     weapon_bonus = weapon.get("attack_bonus", 0) if weapon else 0
-    
+
     # Total attack value
     total_attack = roll + base_mod + class_bonus + racial_bonus + weapon_bonus
 
@@ -1196,35 +1421,35 @@ def calculate_attack(attacker_name: str,
     # Calculate damage
     damage = 0
     detail_parts = [f"Rolled {roll} + bonuses = {total_attack} vs AC {ac}"]
-    
+
     if hit:
         # Default damage dice based on attack mode
         default_damage = {
-            "melee": "1d6", 
+            "melee": "1d6",
             "ranged": "1d4",
             "spell": "1d8"
         }
-        
+
         # Get damage dice expression
         dmg_expr = weapon.get("damage", default_damage.get(mode, "1d4")) if weapon else default_damage.get(mode, "1d4")
-        
+
         # Parse dice expression (e.g., "2d6")
         match = re.match(r"(\d+)d(\d+)", dmg_expr)
         if match:
             num_dice = int(match.group(1))
             sides = int(match.group(2))
-            
+
             # Roll damage (doubled on crit)
             times = 2 if crit else 1
             dmg_roll = 0
             for _ in range(times):
                 for _ in range(num_dice):
                     dmg_roll += random.randint(1, sides)
-            
+
             # Apply damage bonus from stat
             dmg_bonus = base_mod + (weapon.get("damage_bonus", 0) if weapon else 0)
             damage = max(0, dmg_roll + dmg_bonus)
-            
+
             # Build description
             detail_parts.append(f"{'Critical hit!' if crit else 'Hit!'} Damage: {dmg_roll}+{dmg_bonus} = {damage}")
         else:
