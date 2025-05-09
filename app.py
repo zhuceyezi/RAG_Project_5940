@@ -7,7 +7,8 @@ import PyPDF2
 from dotenv import load_dotenv
 import os
 import base64
-from utils import save_scene_graph_image
+from utils import save_scene_graph_image, generate_map_image,move_to_scene,save_scene_graph_with_map_background
+
 
 load_dotenv()  # Automatically loads from `.env` in current directory
 
@@ -28,6 +29,10 @@ if "players" not in st.session_state or not isinstance(list(st.session_state.pla
     st.session_state.players = {
         "Aragorn": Player(name="Aragorn", max_hp=30, hp=30),
     }
+
+# === Map font ===
+if "map_font" not in st.session_state:
+    st.session_state["map_font"] = "serif"  # Default font
 
 
 scene_graph_agent = Agent(
@@ -61,6 +66,26 @@ scene_graph_agent = Agent(
     players={}
 )
 
+map_description_agent = Agent(
+    name="MapDescriptionAgent",
+    model="openai.gpt-4o",
+    instructions="""
+    You are a fantasy map description generator. Given a D&D adventure script, 
+    create a detailed description for an overhead fantasy map of the entire adventure area.
+    
+    Your description should:
+    - Include all key locations from the script (villages, forests, dungeons, etc.)
+    - Describe geographical features (mountains, rivers, forests, etc.)
+    - Mention the general art style (parchment, hand-drawn, etc.)
+    - Include details about colors, textures, and artistic elements
+    - Keep the description between 200-300 words for optimal image generation
+    - Format the description for a top-down view map
+    
+    Return ONLY the map description with no additional commentary.
+    """,
+    tools=[],
+    players={}
+)
 # === Streamlit UI ===
 st.title("🧙 D&D Chat with Dice Rolls")
 st.caption("Powered by Azure OpenAI + Tool Calling")
@@ -112,24 +137,45 @@ else:
     st.info("Please upload a PDF or TXT file to begin setting up your world.")
 
 if "scene_graph_img" not in st.session_state and "script_text" in st.session_state:
-
+    # First, extract scene data
     messages = [{"role": "user", "content": plot}]
     scene_response, _ = run_full_turn(client, scene_graph_agent, messages)
     scene_data_raw = scene_response[-1].content if hasattr(scene_response[-1], "content") else scene_response[-1]["content"]
 
     # Strip ```json ... ``` if GPT wrapped it
     scene_data_raw = re.sub(r"^```(?:json)?|```$", "", scene_data_raw.strip(), flags=re.IGNORECASE | re.MULTILINE).strip()
-
     scene_data = json.loads(scene_data_raw)
 
+    # Store scene data
     st.session_state["scene_list"] = scene_data
     st.session_state["current_scene"] = scene_data[0]["title"] if scene_data else "Unknown"
-    graph_path = save_scene_graph_image(scene_data, current_location=st.session_state["current_scene"])
-    with open(graph_path, "rb") as f:
-        encoded_img = base64.b64encode(f.read()).decode()
-
-    # Store encoded image for display
-    st.session_state["scene_graph_img"] = encoded_img
+    
+    # No longer using map_description_agent - removed that section
+    
+    # Generate and save the map image directly from scene data
+    with st.spinner("🗺️ Generating fantasy map..."):
+        map_path = generate_map_image(client, scene_data)  # Updated signature
+        if map_path:
+            st.session_state["base_map_path"] = map_path
+            
+            # Create the scene graph with map background
+            graph_path = save_scene_graph_with_map_background(
+                scene_data, 
+                map_path,
+                current_location=st.session_state["current_scene"],
+                custom_font=st.session_state.get("map_font", "serif")
+            )
+            
+            with open(graph_path, "rb") as f:
+                encoded_img = base64.b64encode(f.read()).decode()
+                st.session_state["scene_graph_img"] = encoded_img
+                st.success("✅ Adventure map successfully generated!")
+        else:
+            # Fallback to regular scene graph if map generation fails
+            graph_path = save_scene_graph_image(scene_data, current_location=st.session_state["current_scene"])
+            with open(graph_path, "rb") as f:
+                encoded_img = base64.b64encode(f.read()).decode()
+                st.session_state["scene_graph_img"] = encoded_img
 
 
 # === Define the agent using your helper class ===
