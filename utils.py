@@ -761,13 +761,24 @@ def calculate_attack(attacker_name: str,
     # Total attack value
     total_attack = roll + base_mod + class_bonus + racial_bonus + weapon_bonus
 
-    # Calculate AC (armor class) for defender
+    # Calculate AC (armor class) for defender - NOW USING CON INSTEAD OF DEX
     def_stats = defn.stats or {}
-    def_dex_mod = math.floor((def_stats.get("DEX", 10) - 10) / 2)
-    ac = 10 + def_dex_mod  # Basic AC calculation
+    def_con_mod = math.floor((def_stats.get("CON", 10) - 10) / 2)
+    ac = 10 + def_con_mod  # Basic AC calculation using CON for defense
 
-    # Determine hit/critical
-    crit = (roll == 20)
+    # Crit calculation - USE WIS TO IMPROVE CRIT CHANCE
+    atk_wis_mod = math.floor((stats.get("WIS", 10) - 10) / 2)
+    crit_threshold = 20 - max(0, atk_wis_mod)  # WIS improves crit range (19-20, 18-20, etc)
+    crit_threshold = max(16, crit_threshold)   # Cap at 16-20 range to avoid too high crit chance
+    
+    # Anti-crit from defender's CHA
+    def_cha_mod = math.floor((def_stats.get("CHA", 10) - 10) / 2)
+    if def_cha_mod > 0:
+        crit_threshold += def_cha_mod  # Make it harder to crit against charismatic targets
+        crit_threshold = min(20, crit_threshold)  # Can't go above 20
+    
+    # Determine hit/critical with new crit mechanics
+    crit = (roll >= crit_threshold)
     if roll <= 2:  # Critical miss on natural 1-2
         hit = False
     else:
@@ -775,7 +786,11 @@ def calculate_attack(attacker_name: str,
 
     # Calculate damage
     damage = 0
-    detail_parts = [f"Rolled {roll} + bonuses = {total_attack} vs AC {ac}"]
+    detail_parts = [f"Rolled {roll} + bonuses = {total_attack} vs AC {ac} (CON-based)"]
+    
+    # Add crit range info to output
+    if atk_wis_mod > 0 or def_cha_mod > 0:
+        detail_parts.append(f"[Crit on {crit_threshold}-20: WIS bonus {atk_wis_mod}, target CHA mod {def_cha_mod}]")
     
     if hit:
         # Default damage dice based on attack mode
@@ -822,5 +837,6 @@ def calculate_attack(attacker_name: str,
         "hit": hit,
         "crit": crit,
         "damage": damage,
+        "crit_range": f"{crit_threshold}-20",
         "detail": " ".join(detail_parts)
     }
