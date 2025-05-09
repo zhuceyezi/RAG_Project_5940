@@ -24,9 +24,6 @@ client = OpenAI(
 if "chat_log" not in st.session_state:
     st.session_state.chat_log = []
 
-if "current_response" not in st.session_state:
-    st.session_state.current_response = "Game is starting. What would you like to do?"
-
 if "players" not in st.session_state or not isinstance(list(st.session_state.players.values())[0], Player):
     st.session_state.players = {
         "Aragorn": Player(name="Aragorn", max_hp=30, hp=30),
@@ -145,124 +142,91 @@ with st.sidebar:
                     for stat, value in npc.stats.items():
                         st.markdown(f"- {stat}: {value}")
 
-# === Main Layout with Columns ===
-# Create main columns: left for game, right for current situation
-left_col, right_col = st.columns([3, 1])
+# === Main Area: Map and Characters ===
+# Create a container with two sections: top (map) and bottom (character cards)
+main_container = st.container()
 
-with left_col:
-    # Map Container
+with main_container:
+    # Top Section: Map Area with medieval styling
     st.markdown("""
-    <div class="map-outer-container">
+    <div class="map-container">
         <h1>Map</h1>
-        <div class="map-inner-container">
-            <!-- Map image will be inserted here -->
-    """, unsafe_allow_html=True)
-
-    # Insert map image if available
-    if "scene_graph_img" in st.session_state:
-        st.markdown(f"""
-            <img src="data:image/png;base64,{st.session_state['scene_graph_img']}" 
-                 class="map-image">
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-            <div class="map-placeholder">
-                No map available. Upload a script to generate one.
-            </div>
-        """, unsafe_allow_html=True)
-        
-    st.markdown("""
-        </div>
-        
-        <!-- Text Input -->
-        <div class="text-input-container">
-    """, unsafe_allow_html=True)
-    
-    # Text input for commands
-    prompt = st.text_input("", placeholder="Enter your action...", key="medieval_input")
-    
-    st.markdown("""
+        <div id="map-content">
+            <!-- Map content will be inserted here -->
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Character cards row
-    st.markdown("""<div class="character-row">""", unsafe_allow_html=True)
+    # Insert map image if available
+    if "scene_graph_img" in st.session_state:
+        st.markdown(f"""
+        <div style="text-align: center; margin: 20px auto;">
+            <img src="data:image/png;base64,{st.session_state['scene_graph_img']}" 
+                 style="max-width: 80%; height: auto; border: 3px solid #8a7b51;">
+        </div>
+        """, unsafe_allow_html=True)
     
-    # Create character cards using our custom renderer
-    render_character_cards_v2(
+    # Text box for commands/chat input in the map area
+    prompt = st.text_input("", placeholder="What happens next?", key="medieval_input")
+
+    # === Bottom Section: Character Cards ===
+    # Render the character cards at the bottom
+    render_character_cards(
         st.session_state.players, 
         st.session_state.get("npcs", [])
     )
     
-    st.markdown("""</div>""", unsafe_allow_html=True)
-
-# Right column for current situation
-with right_col:
-    st.markdown("""
-    <div class="current-situation">
-        <h3>Generated respond/current situation:</h3>
-        <div class="situation-content">
-    """, unsafe_allow_html=True)
+    # === Create a container for chat response ===
+    chat_response = st.container()
     
-    # Display current response
-    st.markdown(f"""
-        <p>{st.session_state.current_response}</p>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-        </div>
-        <div class="situation-notes">
-            <p>Depends on how many npc were generated, we used 5 blocks here as example</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# Process chat input if entered
-if prompt:
-    st.session_state.chat_log.append({"role": "user", "content": prompt})
-    
-    # Define the agent using your helper class
-    npc_context = ""
-    if "npcs" in st.session_state:
-        npc_context = build_npc_summary(st.session_state["npcs"])
-    
-    instructions = (
-        "You are a Dungeons & Dragons Dungeon Master. Narrate what happens. "
-        "You can use the `roll_dice` tool when needed. "
-        "Use vivid storytelling and refer to characters naturally.\n\n"
-        f"The following NPCs are present:\n{npc_context}"
-        f"Current script: {st.session_state['script_text'] if 'script_text' in st.session_state else ''}"
-        f"You should only use the available scenes when you decide to move. If no major scene change, you can stay at the same scene."
-        f"Here are the available scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
-        f"Try to refer to stats when applicable."
-    )
-    
-    agent = Agent(
-        name="DungeonMaster",
-        model="openai.gpt-4o",
-        instructions=instructions,
-        tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc],
-        players=st.session_state.players
-    )
-    
-    # Run GPT with tool support
-    new_messages, tool_outputs = run_full_turn(client, agent, st.session_state.chat_log)
-    st.session_state.chat_log.extend(new_messages)
-    
-    # Update the current response with the latest assistant message
-    for msg in new_messages:
-        role = msg["role"] if isinstance(msg, dict) else msg.role
-        content = msg["content"] if isinstance(msg, dict) else msg.content
-        
-        if content is None or role == "tool":
-            continue  # hide tool result content
-        
-        if role == "assistant":
-            st.session_state.current_response = content
-    
-    # Apply effects like healing or damage
-    apply_hp_effects(client, new_messages, agent.players)
-    
-    # Rerun to update the UI
-    st.experimental_rerun()
+    # Only show the most recent response to keep the UI clean
+    if prompt:
+        with chat_response:
+            st.session_state.chat_log.append({"role": "user", "content": prompt})
+            
+            # Define the agent using your helper class
+            npc_context = ""
+            if "npcs" in st.session_state:
+                npc_context = build_npc_summary(st.session_state["npcs"])
+            
+            instructions = (
+                "You are a Dungeons & Dragons Dungeon Master. Narrate what happens. "
+                "You can use the `roll_dice` tool when needed. "
+                "Use vivid storytelling and refer to characters naturally.\n\n"
+                f"The following NPCs are present:\n{npc_context}"
+                f"Current script: {st.session_state['script_text'] if 'script_text' in st.session_state else ''}"
+                f"You should only use the available scenes when you decide to move. If no major scene change, you can stay at the same scene."
+                f"Here are the available scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
+                f"Try to refer to stats when applicable."
+            )
+            
+            agent = Agent(
+                name="DungeonMaster",
+                model="openai.gpt-4o",
+                instructions=instructions,
+                tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc],
+                players=st.session_state.players
+            )
+            
+            # Run GPT with tool support
+            new_messages, tool_outputs = run_full_turn(client, agent, st.session_state.chat_log)
+            st.session_state.chat_log.extend(new_messages)
+            
+            # Display only the latest assistant response in a styled box
+            for msg in new_messages:
+                role = msg["role"] if isinstance(msg, dict) else msg.role
+                content = msg["content"] if isinstance(msg, dict) else msg.content
+                
+                if content is None or role == "tool":
+                    continue  # hide tool result content
+                
+                if role == "assistant":
+                    st.markdown(f"""
+                    <div class="dm-response">
+                        <div class="dm-response-header">Dungeon Master:</div>
+                        <div class="dm-response-content">{content}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # Apply effects like healing or damage
+            apply_hp_effects(client, new_messages, agent.players)
