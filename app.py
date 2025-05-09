@@ -149,13 +149,15 @@ instructions = (
     "When an NPC’s attitude toward the party should change based on game events or history, "
     "call the `set_npc_alignment` tool with the NPC’s name and new alignment ('ally','enemy','neutral').\n"
     "For example: @tool set_npc_alignment(name=\"Goblin Chief\", alignment=\"enemy\").\n"
+    "For combat, use calculate_attack and describe the results dramatically.\n"
+    "Example: @tool calculate_attack(attacker_name=\"Aragorn\", defender_name=\"Goblin\")\n"
 )
 
 agent = Agent(
     name="DungeonMaster",
     model="openai.gpt-4o",
     instructions=instructions,
-    tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc, set_npc_alignment],
+    tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc, set_npc_alignment, calculate_attack],
     players=st.session_state.players
 )
 
