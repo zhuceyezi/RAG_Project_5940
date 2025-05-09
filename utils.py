@@ -565,20 +565,18 @@ def render_sidebar(players):
             hp_percent = int(player.hp / player.max_hp * 100)
 
             # Create a custom styled player card
-            st.markdown(f"""
-            <div style="background-color: rgba(40, 24, 8, 0.7); padding: 10px; border-radius: 5px; 
-                       margin: 10px 0; border: 1px solid #fdf3d0;">
-                <h3 style="font-family: 'Cinzel', serif; margin: 0; color: #fdf3d0; 
-                          text-shadow: 0 0 3px #6c3e00;">{player.name}</h3>
-                
-                <div class="hp-bar-container">
-                    <div class="hp-bar" style="width: {hp_percent}%;"></div>
-                </div>
-                <p style="text-align: center; margin: 5px 0; color: #fdf3d0;">
-                    {player.hp}/{player.max_hp} HP
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f'<div style="background-color: rgba(40, 24, 8, 0.7); padding: 10px; border-radius: 5px; '
+                'margin: 10px 0; border: 1px solid #fdf3d0;">'
+                f'<h3 style="font-family: Cinzel, serif; margin: 0; color: #fdf3d0; '
+                f'text-shadow: 0 0 3px #6c3e00;">{player.name}</h3>'
+                f'<div class="hp-bar-container">'
+                f'<div class="hp-bar" style="width: {hp_percent}%;"></div>'
+                '</div>'
+                f'<p style="text-align: center; margin: 5px 0; color: #fdf3d0;">{player.hp}/{player.max_hp} HP</p>'
+                '</div>',
+                unsafe_allow_html=True
+            )
 
             # Toggleable stat view with styled expander
             if hasattr(player, "stats"):
@@ -591,16 +589,13 @@ def render_sidebar(players):
                         modifier = (value - 10) // 2
                         mod_sign = "+" if modifier >= 0 else ""
 
-                        stat_html += f"""
-                        <div style='background-color: rgba(60, 34, 18, 0.7); padding: 5px; 
-                                   border-radius: 5px; text-align: center;'>
-                            <div style='font-weight: bold; color: #fdf3d0;'>{stat}</div>
-                            <div style='font-size: 1.2em; color: #fdf3d0;'>{value}</div>
-                            <div style='color: {"#4dbd74" if modifier >= 0 else "#f86c6b"};'>
-                                {mod_sign}{modifier}
-                            </div>
-                        </div>
-                        """
+                        stat_html += (
+                            f"<div style='background-color: rgba(60, 34, 18, 0.7); padding: 5px; border-radius: 5px; text-align: center;'>"
+                            f"<div style='font-weight: bold; color: #fdf3d0;'>{stat}</div>"
+                            f"<div style='font-size: 1.2em; color: #fdf3d0;'>{value}</div>"
+                            f"<div style='color: {'#4dbd74' if modifier >= 0 else '#f86c6b'};'> {mod_sign}{modifier}</div>"
+                            f"</div>"
+                        )
 
                     stat_html += "</div>"
                     st.markdown(stat_html, unsafe_allow_html=True)
@@ -646,23 +641,19 @@ def render_npcs(npcs: list):
                     bg_color = bg_colors.get(keyword, bg_color)
                     break
 
-            st.markdown(f"""
-            <div style="background-color: {bg_color}; padding: 10px; border-radius: 5px; 
-                       margin: 10px 0; border: 1px solid #fdf3d0;">
-                <h3 style="font-family: 'Cinzel', serif; margin: 0; color: #fdf3d0; 
-                          text-shadow: 0 0 3px #6c3e00;">{npc.name}</h3>
-                <p style="color: #fdf3d0; margin: 2px 0; font-style: italic;">
-                    {npc.race} {npc.char_class}
-                </p>
-                
-                <div class="hp-bar-container">
-                    <div class="hp-bar" style="width: {hp_percent}%;"></div>
-                </div>
-                <p style="text-align: center; margin: 5px 0; color: #fdf3d0;">
-                    {npc.hp}/{npc.max_hp} HP
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f'<div style="background-color: {bg_color}; padding: 10px; border-radius: 5px; '
+                'margin: 10px 0; border: 1px solid #fdf3d0;">'
+                f'<h3 style="font-family: Cinzel, serif; margin: 0; color: #fdf3d0; '
+                f'text-shadow: 0 0 3px #6c3e00;">{npc.name}</h3>'
+                f'<p style="color: #fdf3d0; margin: 2px 0; font-style: italic;">{npc.race} {npc.char_class}</p>'
+                f'<div class="hp-bar-container">'
+                f'<div class="hp-bar" style="width: {hp_percent}%;"></div>'
+                '</div>'
+                f'<p style="text-align: center; margin: 5px 0; color: #fdf3d0;">{npc.hp}/{npc.max_hp} HP</p>'
+                '</div>',
+                unsafe_allow_html=True
+            )
 
             if isinstance(npc, NPCPlayer):
                 with st.expander("Character Details", expanded=False):
@@ -675,16 +666,16 @@ def render_npcs(npcs: list):
                             modifier = (value - 10) // 2
                             mod_sign = "+" if modifier >= 0 else ""
 
-                            stat_html += f"""
-                            <div style='background-color: rgba(60, 34, 18, 0.7); padding: 5px; 
-                                       border-radius: 5px; text-align: center;'>
-                                <div style='font-weight: bold; color: #fdf3d0;'>{stat}</div>
-                                <div style='font-size: 1.2em; color: #fdf3d0;'>{value}</div>
-                                <div style='color: {"#4dbd74" if modifier >= 0 else "#f86c6b"};'>
-                                    {mod_sign}{modifier}
-                                </div>
-                            </div>
-                            """
+                            color = "#4dbd74" if modifier >= 0 else "#f86c6b"
+
+                            stat_html += (
+                                f"<div style='background-color: rgba(60, 34, 18, 0.7); padding: 5px; "
+                                "border-radius: 5px; text-align: center;'>"
+                                f"<div style='font-weight: bold; color: #fdf3d0;'>{stat}</div>"
+                                f"<div style='font-size: 1.2em; color: #fdf3d0;'>{value}</div>"
+                                f"<div style='color: {color};'>{mod_sign}{modifier}</div>"
+                                "</div>"
+                            )
 
                         stat_html += "</div>"
                         st.markdown(stat_html, unsafe_allow_html=True)
@@ -1469,3 +1460,245 @@ def calculate_attack(attacker_name: str,
         "damage": damage,
         "detail": " ".join(detail_parts)
     }
+
+
+# === Apply D&D themed styling ===
+def set_dnd_theme():
+    st.markdown("""
+    <style>
+        /* Main background and styles - using the custom parchment background */
+        .stApp {
+            background-image: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/6e683a25-688c-4bce-9afc-d6644c82e45a/dogcr0-184d6391-3a1b-4491-b14b-257a31504ff0.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzZlNjgzYTI1LTY4OGMtNGJjZS05YWZjLWQ2NjQ0YzgyZTQ1YVwvZG9nY3IwLTE4NGQ2MzkxLTNhMWItNDQ5MS1iMTRiLTI1N2EzMTUwNGZmMC5qcGcifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6ZmlsZS5kb3dubG9hZCJdfQ.ECo-N-4D32QxdJ05G9wvcbvOgxCS6oly_lBL-gjKBKk');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #3b2e1e;
+        }
+
+        /* Make all containers more transparent to let the parchment show through */
+        div[data-testid="stVerticalBlock"] > div {
+            background-color: rgba(252, 246, 231, 0.65);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #9c7448;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Headers */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Cinzel', serif;
+            color: #6c3e00;
+            text-shadow: 1px 1px 2px rgba(107, 83, 28, 0.3);
+            border-bottom: 2px solid #9c7448;
+            padding-bottom: 8px;
+        }
+
+        /* Main title */
+        h1 {
+            font-size: 3rem !important;
+            text-align: center;
+            margin-bottom: 30px !important;
+            letter-spacing: 1px;
+            background-image: linear-gradient(to right, rgba(156, 116, 72, 0), rgba(156, 116, 72, 0.5), rgba(156, 116, 72, 0));
+            padding: 20px 0 !important;
+        }
+
+        /* Buttons */
+        .stButton > button {
+            background-color: #6c3e00;
+            color: #fdf3d0;
+            border: 2px solid #4e2c00;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .stButton > button:hover {
+            background-color: #895000;
+            border-color: #6c3e00;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Sidebar */
+        section[data-testid="stSidebar"] {
+            background-color: rgba(58, 43, 24, 0.85);
+            border-right: 3px solid #6c3e00;
+        }
+
+        section[data-testid="stSidebar"] h1, 
+        section[data-testid="stSidebar"] h2, 
+        section[data-testid="stSidebar"] h3 {
+            color: #fdf3d0;
+            border-bottom-color: #fdf3d0;
+        }
+
+        section[data-testid="stSidebar"] .stMarkdown {
+            color: #fdf3d0;
+        }
+
+        /* Chat messages */
+        .stChatMessage {
+            background-color: rgba(252, 246, 231, 0.8) !important;
+            border: 2px solid #9c7448 !important;
+            border-radius: 8px !important;
+            margin: 10px 0 !important;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stChatMessage.user [data-testid="chatAvatarIcon-user"] {
+            background-color: #4569b3 !important;
+        }
+
+        .stChatMessage.assistant [data-testid="chatAvatarIcon-assistant"] {
+            background-color: #8c4a00 !important;
+        }
+
+        /* File uploader */
+        .stFileUploader {
+            background-color: rgba(252, 246, 231, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px dashed #9c7448;
+        }
+
+        /* Number inputs, sliders, etc. */
+        .stSlider {
+            padding: 10px;
+            background-color: rgba(252, 246, 231, 0.7);
+            border-radius: 8px;
+        }
+
+        .stNumberInput {
+            background-color: rgba(252, 246, 231, 0.7);
+        }
+
+        /* Text areas */
+        .stTextArea textarea {
+            background-color: rgba(252, 246, 231, 0.7);
+            border: 1px solid #9c7448;
+            font-family: 'Fondamento', cursive;
+        }
+
+        /* Select boxes */
+        .stSelectbox {
+            background-color: rgba(252, 246, 231, 0.7);
+        }
+
+        /* Expanders */
+        .stExpander {
+            border: 1px solid #9c7448;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* HP bars styling */
+        .hp-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #3a3a3a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+            border: 1px solid #000;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .hp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #6b0000 0%, #a90000 50%, #df1f1f 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* Scene map styling */
+        .scene-map {
+            border: 5px solid #6c3e00;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* D&D-style decorative elements */
+        .dnd-divider {
+            text-align: center;
+            margin: 20px 0;
+            height: 20px;
+            background-image: url('https://i.imgur.com/6ZwiYV4.png');
+            background-repeat: repeat-x;
+            background-size: contain;
+        }
+
+        /* Import fantasy fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Fondamento&display=swap');
+
+        /* Custom styles for Character Cards */
+        .character-card {
+            border: 2px solid #9c7448;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: rgba(252, 246, 231, 0.9);
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .character-card h4 {
+            margin-top: 0;
+            border-bottom: 1px solid #9c7448;
+            padding-bottom: 5px;
+        }
+
+        /* Make chat input more prominent */
+        [data-testid="stChatInput"] {
+            background-color: rgba(252, 246, 231, 0.9) !important;
+            border: 2px solid #9c7448 !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 10px !important;
+            font-family: 'Fondamento', cursive !important;
+        }
+
+        /* Ensure text is readable on the dark sidebar */
+        .stCheckbox label p {
+            color: #fdf3d0 !important; 
+        }
+
+        /* Custom NPC grid */
+        .npc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* Custom header with dragon decoration */
+        .dnd-header {
+            text-align: center;
+            padding: 20px 10px 0;
+            position: relative;
+        }
+
+        .dnd-header:before, .dnd-header:after {
+            content: "";
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            background-image: url('https://i.imgur.com/JcXiklo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: absolute;
+            top: 0;
+        }
+
+        .dnd-header:before {
+            left: 10px;
+            transform: scaleX(-1);
+        }
+
+        .dnd-header:after {
+            right: 10px;
+        }
+    </style>
+
+    <div class="dnd-header"></div>
+    """, unsafe_allow_html=True)
