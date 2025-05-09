@@ -1,0 +1,36 @@
+{
+  "racial_bonus": {
+    "Human":    { "STR": 1, "DEX": 1, "CON": 1, "INT": 1, "WIS": 1, "CHA": 1 },
+    "Elf":      { "DEX": 1 },
+    "Dwarf":    { "CON": 1 },
+    "Gnome":    { "INT": 1 },
+    "Half-Orc": { "STR": 1 },
+    "Tiefling": { "CHA": 1 },
+    "Half-Elf": { "CHA": 1, "DEX": 1 },
+    "Aasimar":  { "WIS": 1 }
+  },
+  "class_bonus": {
+    "Fighter":   { "STR": 1 },
+    "Rogue":     { "DEX": 1 },
+    "Wizard":    { "INT": 1 },
+    "Cleric":    { "WIS": 1 },
+    "Ranger":    { "DEX": 1 },
+    "Warlock":   { "CHA": 1 },
+    "Bard":      { "CHA": 1 },
+    "Paladin":   { "STR": 1 },
+    "Artificer": { "INT": 1 },
+    "Healer":    { "WIS": 1 }
+  },
+  "class_attack_mode": {
+    "Fighter":   "melee",
+    "Paladin":   "melee",
+    "Ranger":    "ranged",
+    "Rogue":     "melee",
+    "Wizard":    "spell",
+    "Warlock":   "spell",
+    "Cleric":    "spell",
+    "Artificer": "spell",
+    "Bard":      "spell",
+    "Healer":    "spell"
+  }
+}

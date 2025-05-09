@@ -9,6 +9,8 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import tempfile
+import os
+import math
 
 class Player:
     def __init__(self, name, max_hp, hp, stats=None):
@@ -228,7 +230,15 @@ def run_full_turn(client, agent, messages):
             tools=tool_schemas or None,
         )
         message = response.choices[0].message
-        messages.append(message)
+
+        # convert message to dict if it's not already
+        message_dict = {
+            "role": message.role,
+            "content": message.content
+        }
+        if hasattr(message, "tool_calls") and message.tool_calls:
+            message_dict["tool_calls"] = message.tool_calls
+        messages.append(message_dict)
 
         if message.content:  # Assistant textual output
             print("Assistant:", message.content)
@@ -273,8 +283,13 @@ def run_full_turn(client, agent, messages):
 
 
 def execute_tool_call(tool_call, tools_map):
-    name = tool_call.function.name
-    args = json.loads(tool_call.function.arguments)
+    if isinstance(tool_call, dict):
+        name = tool_call.get("function", {}).get("name")
+        args = json.loads(tool_call.get("function", {}).get("arguments", "{}"))
+    else:
+        name = tool_call.function.name
+        args = json.loads(tool_call.function.arguments)
+    
     print(f"Assistant is calling: {name}({args})")
 
     result = tools_map[name](**args)
@@ -513,7 +528,10 @@ def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o")
     # Extract GPT response
     try:
         response_msg = result_messages[-1]
-        content = response_msg.content if hasattr(response_msg, "content") else response_msg.get("content", "")
+        if isinstance(response_msg, dict):
+            content = response_msg.get("content", "")
+        else:
+            content = response_msg.content if hasattr(response_msg, "content") else ""
         st.markdown(f"🔎 GPT returned:\n```json\n{content.strip()}\n```")
         effects = json.loads(content)
     except Exception as e:
@@ -674,3 +692,135 @@ def set_npc_alignment(name: str, alignment: str):
             npc.alignment = alignment
             return f"✅ NPC '{npc.name}' alignment set to '{alignment}'."
     return f"❌ NPC named '{name}' not found."
+
+def load_combat_rules(path="combat_rules.json") -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+_rules = load_combat_rules()
+RACIAL_BONUS = _rules["racial_bonus"]
+CLASS_BONUS = _rules["class_bonus"]
+CLASS_ATTACK_MODE = _rules["class_attack_mode"]
+
+# @tool
+def calculate_attack(attacker_name: str,
+                     defender_name: str,
+                     mode: str = None,
+                     weapon: dict = None) -> dict:
+    """
+    Calculate attack results between two entities.
+    
+    Args:
+        attacker_name: Name of the attacking entity
+        defender_name: Name of the defending entity
+        mode: Attack mode ("melee", "ranged", or "spell") - if None, inferred from class
+        weapon: Optional weapon data with keys like "damage" and "attack_bonus"
+        
+    Returns:
+        Dictionary with attack results
+    """
+    # Helper to find entity
+    def _get_entity(name: str):
+        if "players" in st.session_state and name in st.session_state["players"]:
+            return st.session_state["players"][name]
+        for npc in st.session_state.get("npcs", []):
+            if npc.name.lower() == name.lower():
+                return npc
+        raise ValueError(f"Entity '{name}' not found")
+
+    # Get entities
+    atk = _get_entity(attacker_name)
+    defn = _get_entity(defender_name)
+
+    # If mode not provided, get from class_attack_mode in JSON
+    if mode is None:
+        mode = CLASS_ATTACK_MODE.get(atk.char_class, "melee")
+
+    # Roll d20 for attack
+    roll = random.randint(1, 20)
+
+    # Determine which stat to use based on attack mode
+    stats = atk.stats or {}
+    if mode == "melee":
+        stat_key = "STR"
+    elif mode == "ranged":
+        stat_key = "DEX"
+    else:  # spell
+        stat_key = "INT"  # Could extend to use WIS/CHA for different caster classes
+    
+    # Calculate ability modifier: (stat-10)/2 rounded down
+    base_mod = math.floor((stats.get(stat_key, 10) - 10) / 2)
+    
+    # Apply racial and class bonuses
+    class_bonus = CLASS_BONUS.get(atk.char_class, {}).get(stat_key, 0)
+    racial_bonus = RACIAL_BONUS.get(atk.race, {}).get(stat_key, 0)
+    
+    # Weapon bonus
+    weapon_bonus = weapon.get("attack_bonus", 0) if weapon else 0
+    
+    # Total attack value
+    total_attack = roll + base_mod + class_bonus + racial_bonus + weapon_bonus
+
+    # Calculate AC (armor class) for defender
+    def_stats = defn.stats or {}
+    def_dex_mod = math.floor((def_stats.get("DEX", 10) - 10) / 2)
+    ac = 10 + def_dex_mod  # Basic AC calculation
+
+    # Determine hit/critical
+    crit = (roll == 20)
+    if roll <= 2:  # Critical miss on natural 1-2
+        hit = False
+    else:
+        hit = crit or (total_attack >= ac)
+
+    # Calculate damage
+    damage = 0
+    detail_parts = [f"Rolled {roll} + bonuses = {total_attack} vs AC {ac}"]
+    
+    if hit:
+        # Default damage dice based on attack mode
+        default_damage = {
+            "melee": "1d6", 
+            "ranged": "1d4",
+            "spell": "1d8"
+        }
+        
+        # Get damage dice expression
+        dmg_expr = weapon.get("damage", default_damage.get(mode, "1d4")) if weapon else default_damage.get(mode, "1d4")
+        
+        # Parse dice expression (e.g., "2d6")
+        match = re.match(r"(\d+)d(\d+)", dmg_expr)
+        if match:
+            num_dice = int(match.group(1))
+            sides = int(match.group(2))
+            
+            # Roll damage (doubled on crit)
+            times = 2 if crit else 1
+            dmg_roll = 0
+            for _ in range(times):
+                for _ in range(num_dice):
+                    dmg_roll += random.randint(1, sides)
+            
+            # Apply damage bonus from stat
+            dmg_bonus = base_mod + (weapon.get("damage_bonus", 0) if weapon else 0)
+            damage = max(0, dmg_roll + dmg_bonus)
+            
+            # Build description
+            detail_parts.append(f"{'Critical hit!' if crit else 'Hit!'} Damage: {dmg_roll}+{dmg_bonus} = {damage}")
+        else:
+            # Fallback if dice expression is invalid
+            damage = random.randint(1, 4)
+            detail_parts.append(f"Hit! Damage: {damage}")
+    else:
+        detail_parts.append("Missed!")
+
+    # Return complete result
+    return {
+        "roll": roll,
+        "total_attack": total_attack,
+        "threshold": ac,
+        "hit": hit,
+        "crit": crit,
+        "damage": damage,
+        "detail": " ".join(detail_parts)
+    }
