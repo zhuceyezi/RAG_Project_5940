@@ -8,7 +8,7 @@
     color: #d4c6a1;
     background-color: #1a1a1a;
     border: 8px solid transparent;
-    border-image: url('https://i.imgur.com/IXRB8E0.png') 30 stretch;
+    border-image: url('https://imgur.com/gallery/dnd-background-OBLZXVk') 30 stretch;
     margin: -1rem -5rem;
     padding: 1rem;
     display: flex;
@@ -116,11 +116,11 @@
     border: 2px solid #8a7e66;
     border-radius: 5px;
     margin-bottom: 5px;
-    background-image: url('https://i.imgur.com/8MOoIZP.png');
+    background-image: url('https://imgur.com/gallery/dnd-background-OBLZXVk');
 }
 
 .npc-portrait {
-    background-image: url('https://i.imgur.com/H5XVrAg.png');
+    background-image: url('https://imgur.com/gallery/dnd-background-OBLZXVk');
 }
 
 .character-name {
