@@ -24,6 +24,9 @@ client = OpenAI(
 if "chat_log" not in st.session_state:
     st.session_state.chat_log = []
 
+if "current_response" not in st.session_state:
+    st.session_state.current_response = "Game is starting. What would you like to do?"
+
 if "players" not in st.session_state or not isinstance(list(st.session_state.players.values())[0], Player):
     st.session_state.players = {
         "Aragorn": Player(name="Aragorn", max_hp=30, hp=30),
@@ -61,142 +64,205 @@ scene_graph_agent = Agent(
     players={}
 )
 
-# === Streamlit UI ===
-st.title("🧙 D&D Chat with Dice Rolls")
-st.caption("Powered by Azure OpenAI + Tool Calling")
+# Apply the medieval styling
+render_medieval_css()
 
-
-st.header("🧙 NPC Generator Test")
-
-npc_count = st.number_input("How many NPCs do you want to generate?", min_value=1, max_value=10, value=3)
-
-if st.button("Generate NPCs"):
-    result = sample_npcs(npc_count)
-    st.session_state["npcs"] = result["npcs"]
-
-    st.success("NPCs Generated:")
-    for npc in result["npcs"]:
-        with st.expander(f"🧍 {npc.name} - {npc.char_class} ({npc.race})"):
-            st.markdown(f"- **Personality:** {npc.personality}")
-            st.markdown(f"- **Combat Role:** {npc.combat_role}")
-            st.markdown(f"- **Quirks:** {npc.quirks}")
-            st.markdown(f"- **Voice Style:** {npc.voice}")
-            st.markdown(f"- **Unique Trait:** {npc.trait}")
-
-# === Script Upload ===
-st.header("📘 Upload Your Script")
-
-uploaded_file = st.file_uploader("Upload your campaign script (PDF or TXT)", type=["pdf", "txt"])
-if uploaded_file:
-    if uploaded_file.type == "application/pdf":
-        try:
-            pdf_reader = PyPDF2.PdfReader(uploaded_file)
+# === Configure the sidebar for tools ===
+with st.sidebar:
+    st.markdown("""
+    <div class="sidebar-header">
+        <h2>Game Master Tools</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # NPC Generator in sidebar
+    st.header("🧙 NPC Generator")
+    npc_count = st.number_input("How many NPCs?", min_value=1, max_value=10, value=3)
+    
+    if st.button("Generate NPCs"):
+        result = sample_npcs(npc_count)
+        st.session_state["npcs"] = result["npcs"]
+        st.success(f"✅ {len(result['npcs'])} NPCs Generated!")
+    
+    # Script Upload in sidebar
+    st.header("📘 Upload Script")
+    
+    uploaded_file = st.file_uploader("Upload campaign script (PDF/TXT)", type=["pdf", "txt"])
+    if uploaded_file:
+        if uploaded_file.type == "application/pdf":
+            try:
+                pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                plot = ""
+                for page in pdf_reader.pages:
+                    plot += page.extract_text() or ""
+            except Exception as e:
+                st.sidebar.error(f"❌ Could not read PDF: {e}")
+                plot = ""
+        elif uploaded_file.type == "text/plain":
+            plot = uploaded_file.read().decode("utf-8")
+        else:
+            st.sidebar.warning("Unsupported file type")
             plot = ""
-            for page in pdf_reader.pages:
-                plot += page.extract_text() or ""
-        except Exception as e:
-            st.error(f"❌ Could not read PDF: {e}")
-            text = ""
-    elif uploaded_file.type == "text/plain":
-        plot = uploaded_file.read().decode("utf-8")
+            
+        st.session_state["script_text"] = plot
+        
+        # Process scene data if new script is uploaded
+        messages = [{"role": "user", "content": plot}]
+        scene_response, _ = run_full_turn(client, scene_graph_agent, messages)
+        scene_data_raw = scene_response[-1].content if hasattr(scene_response[-1], "content") else scene_response[-1]["content"]
+
+        # Strip ```json ... ``` if GPT wrapped it
+        scene_data_raw = re.sub(r"^```(?:json)?|```$", "", scene_data_raw.strip(), flags=re.IGNORECASE | re.MULTILINE).strip()
+
+        scene_data = json.loads(scene_data_raw)
+
+        st.session_state["scene_list"] = scene_data
+        st.session_state["current_scene"] = scene_data[0]["title"] if scene_data else "Unknown"
+        graph_path = save_scene_graph_image(scene_data, current_location=st.session_state["current_scene"])
+        with open(graph_path, "rb") as f:
+            encoded_img = base64.b64encode(f.read()).decode()
+
+        # Store encoded image for display
+        st.session_state["scene_graph_img"] = encoded_img
+        
+        st.sidebar.success("✅ Scene map extracted!")
+        
+    # Display NPC details in sidebar if they exist
+    if "npcs" in st.session_state and st.session_state["npcs"]:
+        st.header("🧙 NPCs Details")
+        for npc in st.session_state["npcs"]:
+            with st.expander(f"{npc.name} ({npc.char_class})"):
+                st.markdown(f"**Race:** {npc.race}")
+                st.markdown(f"**Personality:** {npc.personality}")
+                st.markdown(f"**Combat Role:** {npc.combat_role}")
+                st.markdown(f"**Quirks:** {npc.quirks}")
+                st.markdown(f"**Voice:** {npc.voice}")
+                st.markdown(f"**Trait:** {npc.trait}")
+                
+                # Display stats if available
+                if hasattr(npc, "stats") and isinstance(npc.stats, dict):
+                    st.markdown("**Stats:**")
+                    for stat, value in npc.stats.items():
+                        st.markdown(f"- {stat}: {value}")
+
+# === Main Layout with Columns ===
+# Create main columns: left for game, right for current situation
+left_col, right_col = st.columns([3, 1])
+
+with left_col:
+    # Map Container
+    st.markdown("""
+    <div class="map-outer-container">
+        <h1>Map</h1>
+        <div class="map-inner-container">
+            <!-- Map image will be inserted here -->
+    """, unsafe_allow_html=True)
+
+    # Insert map image if available
+    if "scene_graph_img" in st.session_state:
+        st.markdown(f"""
+            <img src="data:image/png;base64,{st.session_state['scene_graph_img']}" 
+                 class="map-image">
+        """, unsafe_allow_html=True)
     else:
-        st.warning("Unsupported file type")
-        plot = ""
-    st.session_state["script_text"] = plot
-    st.success("✅ Scene map successfully extracted!")
+        st.markdown("""
+            <div class="map-placeholder">
+                No map available. Upload a script to generate one.
+            </div>
+        """, unsafe_allow_html=True)
+        
+    st.markdown("""
+        </div>
+        
+        <!-- Text Input -->
+        <div class="text-input-container">
+    """, unsafe_allow_html=True)
+    
+    # Text input for commands
+    prompt = st.text_input("", placeholder="Enter your action...", key="medieval_input")
+    
+    st.markdown("""
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Character cards row
+    st.markdown("""<div class="character-row">""", unsafe_allow_html=True)
+    
+    # Create character cards using our custom renderer
+    render_character_cards_v2(
+        st.session_state.players, 
+        st.session_state.get("npcs", [])
+    )
+    
+    st.markdown("""</div>""", unsafe_allow_html=True)
 
-    st.subheader("📜 Script Preview")
-    st.text_area("Script contents:", plot, height=400)
+# Right column for current situation
+with right_col:
+    st.markdown("""
+    <div class="current-situation">
+        <h3>Generated respond/current situation:</h3>
+        <div class="situation-content">
+    """, unsafe_allow_html=True)
+    
+    # Display current response
+    st.markdown(f"""
+        <p>{st.session_state.current_response}</p>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+        </div>
+        <div class="situation-notes">
+            <p>Depends on how many npc were generated, we used 5 blocks here as example</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-else:
-    st.info("Please upload a PDF or TXT file to begin setting up your world.")
-
-if "scene_graph_img" not in st.session_state and "script_text" in st.session_state:
-
-    messages = [{"role": "user", "content": plot}]
-    scene_response, _ = run_full_turn(client, scene_graph_agent, messages)
-    scene_data_raw = scene_response[-1].content if hasattr(scene_response[-1], "content") else scene_response[-1]["content"]
-
-    # Strip ```json ... ``` if GPT wrapped it
-    scene_data_raw = re.sub(r"^```(?:json)?|```$", "", scene_data_raw.strip(), flags=re.IGNORECASE | re.MULTILINE).strip()
-
-    scene_data = json.loads(scene_data_raw)
-
-    st.session_state["scene_list"] = scene_data
-    st.session_state["current_scene"] = scene_data[0]["title"] if scene_data else "Unknown"
-    graph_path = save_scene_graph_image(scene_data, current_location=st.session_state["current_scene"])
-    with open(graph_path, "rb") as f:
-        encoded_img = base64.b64encode(f.read()).decode()
-
-    # Store encoded image for display
-    st.session_state["scene_graph_img"] = encoded_img
-
-
-# === Define the agent using your helper class ===
-npc_context = ""
-if "npcs" in st.session_state:
-    npc_context = build_npc_summary(st.session_state["npcs"])
-
-instructions = (
-    "You are a Dungeons & Dragons Dungeon Master. Narrate what happens. "
-    "You can use the `roll_dice` tool when needed. "
-    "Use vivid storytelling and refer to characters naturally.\n\n"
-    f"The following NPCs are present:\n{npc_context}"
-    f"Current script: {st.session_state['script_text'] if 'script_text' in st.session_state else ''}"
-    f"You should only use the available scenes when you decide to move. If no major scene change, you can stay at the same scene."
-    f"Here are the available scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
-    f"Try to refer to stats when applicable."
-)
-
-agent = Agent(
-    name="DungeonMaster",
-    model="openai.gpt-4o",
-    instructions=instructions,
-    tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc],
-    players=st.session_state.players
-)
-
-
-# === Display chat log ===
-for msg in st.session_state.chat_log:
-    role = msg["role"] if isinstance(msg, dict) else msg.role
-    content = msg["content"] if isinstance(msg, dict) else msg.content
-
-    if content is None or role == "tool":
-        continue  # hide tool result content
-
-    with st.chat_message(role):
-        st.markdown(content)
-
-
-# === Chat input ===
-if prompt := st.chat_input("What happens next?"):
+# Process chat input if entered
+if prompt:
     st.session_state.chat_log.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
+    
+    # Define the agent using your helper class
+    npc_context = ""
+    if "npcs" in st.session_state:
+        npc_context = build_npc_summary(st.session_state["npcs"])
+    
+    instructions = (
+        "You are a Dungeons & Dragons Dungeon Master. Narrate what happens. "
+        "You can use the `roll_dice` tool when needed. "
+        "Use vivid storytelling and refer to characters naturally.\n\n"
+        f"The following NPCs are present:\n{npc_context}"
+        f"Current script: {st.session_state['script_text'] if 'script_text' in st.session_state else ''}"
+        f"You should only use the available scenes when you decide to move. If no major scene change, you can stay at the same scene."
+        f"Here are the available scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
+        f"Try to refer to stats when applicable."
+    )
+    
+    agent = Agent(
+        name="DungeonMaster",
+        model="openai.gpt-4o",
+        instructions=instructions,
+        tools=[roll_dice, sample_npcs, move_to_scene, add_npc, remove_npc],
+        players=st.session_state.players
+    )
+    
     # Run GPT with tool support
     new_messages, tool_outputs = run_full_turn(client, agent, st.session_state.chat_log)
     st.session_state.chat_log.extend(new_messages)
-
-    # Display assistant messages in bubbles
+    
+    # Update the current response with the latest assistant message
     for msg in new_messages:
         role = msg["role"] if isinstance(msg, dict) else msg.role
         content = msg["content"] if isinstance(msg, dict) else msg.content
-
-        if content is None:
-            continue  # Skip messages with no displayable content
-
-        with st.chat_message(role):
-            st.markdown(content)
-
+        
+        if content is None or role == "tool":
+            continue  # hide tool result content
+        
+        if role == "assistant":
+            st.session_state.current_response = content
+    
     # Apply effects like healing or damage
     apply_hp_effects(client, new_messages, agent.players)
-
-render_sidebar(agent.players)
-if "npcs" in st.session_state:
-    render_npcs(st.session_state["npcs"])
     
-if st.session_state.get("show_map") and "scene_graph_img" in st.session_state:
-    render_scene_graph_bottom_right(st.session_state["scene_graph_img"])
-    # render_scene_graph_right_panel(st.session_state["scene_graph_img"])
+    # Rerun to update the UI
+    st.experimental_rerun()

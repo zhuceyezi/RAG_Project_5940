@@ -86,7 +86,6 @@ class NPCPlayer(Player):
         }
 
 
-
 def load_npc_pool(path="npcs.json") -> list:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
@@ -97,6 +96,9 @@ def save_scene_graph_image(scene_data, current_location=None):
     import tempfile
     from matplotlib.patches import Patch
 
+    # Set dark style for medieval theme
+    plt.style.use('dark_background')
+    
     G = nx.DiGraph()
     labels = {}
     node_colors = []
@@ -112,29 +114,29 @@ def save_scene_graph_image(scene_data, current_location=None):
 
     for node in G.nodes:
         if current_location and node.lower() == current_location.lower():
-            node_colors.append("red")
+            node_colors.append("#c9a255")  # gold for current location
         else:
-            node_colors.append("lightblue")
+            node_colors.append("#555555")  # gray for other locations
 
-    plt.figure(figsize=(6, 6))
-    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=2200)
-    nx.draw_networkx_edges(G, pos, arrowstyle="->", arrowsize=20, edge_color="gray")
-    nx.draw_networkx_labels(G, pos, labels, font_size=10)
+    plt.figure(figsize=(6, 6), facecolor='#000000')
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=2200, edgecolors='#8a7b51', linewidths=2)
+    nx.draw_networkx_edges(G, pos, arrowstyle="->", arrowsize=20, edge_color="#8a7b51", width=2)
+    nx.draw_networkx_labels(G, pos, labels, font_size=10, font_color='#d4c6a3', font_family='serif')
 
-    # Add legend below the graph
+    # Add legend with medieval styling
     legend_elements = [
-        Patch(facecolor='red', edgecolor='gray', label='Current Location'),
-        Patch(facecolor='lightblue', edgecolor='gray', label='Other Scenes')
+        Patch(facecolor='#c9a255', edgecolor='#8a7b51', label='Current Location'),
+        Patch(facecolor='#555555', edgecolor='#8a7b51', label='Other Scenes')
     ]
-    plt.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.1), ncol=2)
+    plt.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.1),
+               ncol=2, facecolor='#000000', edgecolor='#8a7b51', labelcolor='#d4c6a3')
 
     tmpfile = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
     plt.axis("off")
     plt.tight_layout(pad=2)
-    plt.savefig(tmpfile.name, format="png", bbox_inches="tight")
+    plt.savefig(tmpfile.name, format="png", bbox_inches="tight", facecolor='#000000')
     plt.close()
     return tmpfile.name
-
 
 
 def sample_npcs(n: int) -> dict:
@@ -147,7 +149,6 @@ def sample_npcs(n: int) -> dict:
 
     npc_players = [NPCPlayer.from_dict(npc) for npc in sampled]
     return {"npcs": npc_players}
-
 
 
 def function_to_schema(func) -> dict:
@@ -266,9 +267,6 @@ def run_full_turn(client, agent, messages):
     return messages[num_init_messages:], tool_outputs
 
 
-
-
-
 def execute_tool_call(tool_call, tools_map):
     name = tool_call.function.name
     args = json.loads(tool_call.function.arguments)
@@ -341,6 +339,370 @@ def build_game_state_summary(players: dict, npcs: list) -> str:
     return "\n".join(lines)
 
 
+def render_character_cards_v2(players, npcs=None):
+    """Renders character cards in the exact style shown in the example image"""
+    if npcs is None:
+        npcs = []
+    
+    # Create 5 cards total
+    all_chars = []
+    
+    # Add player first
+    if players:
+        player = list(players.values())[0]
+        all_chars.append({
+            "name": player.name,
+            "is_player": True,
+            "hp": player.hp,
+            "max_hp": player.max_hp,
+            "class": "Player"
+        })
+    
+    # Add NPCs
+    for npc in npcs[:4]:  # Limit to 4 NPCs
+        all_chars.append({
+            "name": npc.name,
+            "is_player": False,
+            "hp": npc.hp,
+            "max_hp": npc.max_hp,
+            "class": npc.char_class
+        })
+    
+    # Add placeholder cards if needed
+    while len(all_chars) < 5:
+        all_chars.append({
+            "name": "NPC",
+            "is_player": False,
+            "hp": 0,
+            "max_hp": 0,
+            "class": "Unknown"
+        })
+    
+    # Render cards
+    cols = st.columns(5)
+    for i, char in enumerate(all_chars):
+        with cols[i]:
+            display_name = char["name"]
+            is_player = char["is_player"]
+            card_type = "Player figure" if is_player else "NPC figure"
+            hp_text = f"HP: {char['hp']}/{char['max_hp']}" if is_player else f"HP:/Career"
+            
+            st.markdown(f"""
+            <div class="character-card-v2">
+                <div class="character-portrait">
+                    {card_type}
+                </div>
+                <div class="character-nameplate">
+                    {display_name}
+                </div>
+                <div class="character-status">
+                    {hp_text}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+
+def render_character_cards(players, npcs=None):
+    if npcs is None:
+        npcs = []
+    
+    # Create 5 columns for cards
+    cols = st.columns(5)
+    
+    # Player Card (first column)
+    player = list(players.values())[0] if players else None
+    if player:
+        with cols[0]:
+            st.markdown(f"""
+            <div class="character-card">
+                <h2>{player.name}</h2>
+                <div class="card-content">
+                    <p>HP: {player.hp}/{player.max_hp}</p>
+                </div>
+                <div class="status-bar">Blood/Career</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # NPC Cards (remaining columns)
+    for i in range(4):
+        with cols[i+1]:
+            if i < len(npcs):
+                npc = npcs[i]
+                st.markdown(f"""
+                <div class="character-card">
+                    <h2>{npc.name}</h2>
+                    <div class="card-content">
+                        <p>{npc.race} {npc.char_class}</p>
+                        <p>HP: {npc.hp}/{npc.max_hp}</p>
+                    </div>
+                    <div class="status-bar">Blood/{npc.char_class}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                # Empty NPC card placeholder
+                st.markdown("""
+                <div class="character-card">
+                    <h2>NPC</h2>
+                    <div class="card-content">
+                    </div>
+                    <div class="status-bar">Blood/Career</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+
+def render_medieval_css():
+    """Renders the medieval-themed CSS styling"""
+    st.markdown("""
+    <style>
+    /* Global Styles */
+    body {
+        background-color: #111;
+        color: #d4c6a3;
+        font-family: 'serif';
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+    }
+    
+    /* Map Container */
+    .map-outer-container {
+        background-color: #000;
+        border: 12px solid transparent;
+        border-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=') 30 round;
+        padding: 15px;
+        margin-bottom: 20px;
+        min-height: 400px;
+        color: #d4c6a3;
+        text-align: center;
+    }
+    
+    .map-outer-container h1 {
+        color: #d4c6a3;
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+    
+    .map-inner-container {
+        width: 100%;
+        height: 300px;
+        border: 3px solid #8a7b51;
+        background-color: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    
+    .map-image {
+        max-width: 100%;
+        max-height: 100%;
+    }
+    
+    .map-placeholder {
+        color: #8a7b51;
+        font-style: italic;
+    }
+    
+    .text-input-container {
+        margin: 20px 0;
+    }
+    
+    /* Character Cards Row */
+    .character-row {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        margin-top: 20px;
+    }
+    
+    /* Character Cards v2 - Exact match to example */
+    .character-card-v2 {
+        background-color: #222;
+        border: 8px solid #3d2e16;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        color: #d4c6a3;
+        text-align: center;
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+    }
+    
+    .character-portrait {
+        height: 150px;
+        background-color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 2px solid #3d2e16;
+    }
+    
+    .character-nameplate {
+        background-color: #3d2e16;
+        padding: 5px;
+        font-weight: bold;
+    }
+    
+    .character-status {
+        background-color: #111;
+        padding: 5px;
+        border-top: 2px solid #3d2e16;
+    }
+    
+    /* Character Cards (original) */
+    .character-card {
+        background-color: #222;
+        border: 8px solid #3d2e16;
+        margin: 5px;
+        padding: 10px;
+        height: 200px;
+        display: flex;
+        flex-direction: column;
+        color: #d4c6a3;
+        text-align: center;
+    }
+    
+    .character-card h2 {
+        margin-top: 0;
+        font-size: 24px;
+        color: #d4c6a3;
+    }
+    
+    .card-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .status-bar {
+        background-color: #3d2e16;
+        color: #ffebc2;
+        padding: 5px;
+        margin-top: auto;
+        text-align: center;
+        font-weight: bold;
+    }
+    
+    /* Current Situation Panel */
+    .current-situation {
+        background-color: #000;
+        border: 8px solid #3d2e16;
+        height: 100%;
+        padding: 10px;
+        color: #d4c6a3;
+    }
+    
+    .current-situation h3 {
+        color: #c9a255;
+        text-align: center;
+        border-bottom: 1px solid #8a7b51;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .situation-content {
+        min-height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .situation-notes {
+        font-size: 0.8em;
+        color: #8a7b51;
+        border-top: 1px solid #8a7b51;
+        padding-top: 10px;
+    }
+    
+    /* Chat Area */
+    .stTextInput input {
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #d4c6a3;
+        border: 2px solid #8a7b51;
+        padding: 10px;
+        border-radius: 20px;
+    }
+    
+    /* Dungeon Master Response */
+    .dm-response {
+        background-color: rgba(30, 20, 10, 0.7);
+        border: 2px solid #8a7b51;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 5px;
+        color: #d4c6a3;
+    }
+    
+    .dm-response-header {
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #c9a255;
+    }
+    
+    .dm-response-content {
+        line-height: 1.5;
+    }
+    
+    /* Hide default Streamlit styles */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display:none;}
+    
+    /* Sidebar styling */
+    .sidebar-header {
+        background-color: #3d2e16;
+        padding: 10px;
+        text-align: center;
+        border: 2px solid #8a7b51;
+        margin-bottom: 20px;
+    }
+    
+    .sidebar-header h2 {
+        color: #d4c6a3;
+        margin: 0;
+    }
+    
+    /* Style sidebar elements */
+    [data-testid="stSidebar"] {
+        background-color: #222;
+        border-right: 2px solid #8a7b51;
+    }
+    
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3 {
+        color: #c9a255;
+    }
+    
+    [data-testid="stSidebar"] .stButton button {
+        background-color: #3d2e16;
+        color: #d4c6a3;
+        border: 1px solid #8a7b51;
+    }
+    
+    [data-testid="stSidebar"] .stButton button:hover {
+        background-color: #5e4a2a;
+    }
+    
+    /* Make expanders look medieval */
+    .streamlit-expanderHeader {
+        background-color: #3d2e16;
+        color: #d4c6a3;
+        border: 1px solid #8a7b51;
+    }
+    
+    .streamlit-expanderContent {
+        background-color: #222;
+        border: 1px solid #8a7b51;
+        border-top: none;
+    }
+    
+    /* Layout adjustments */
+    [data-testid="column"] {
+        padding: 0 5px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
 def render_sidebar(players):
     with st.sidebar:
         if "show_map" not in st.session_state:
@@ -383,10 +745,6 @@ def render_npcs(npcs: list):
                     st.markdown(f"- **Quirks:** {npc.quirks}")
                     st.markdown(f"- **Voice Style:** {npc.voice}")
                     st.markdown(f"- **Unique Trait:** {npc.trait}")
-
-
-
-
             else:  # fallback
                 with st.expander(f"{npc.name}"):
                     st.markdown(f"🩸 {'🟥' * bar}{'⬛' * (20 - bar)} ({npc.hp}/{npc.max_hp})")
@@ -504,14 +862,16 @@ def apply_hp_effects(client, assistant_messages, players, model="openai.gpt-4o")
     try:
         response_msg = result_messages[-1]
         content = response_msg.content if hasattr(response_msg, "content") else response_msg.get("content", "")
-        st.markdown(f"🔎 GPT returned:\n```json\n{content.strip()}\n```")
+        # Hide this debug output for cleaner UI
+        # st.markdown(f"🔎 GPT returned:\n```json\n{content.strip()}\n```")
         effects = json.loads(content)
     except Exception as e:
         st.warning(f"❌ GPT could not parse HP effects: {e}")
         return
 
     if not effects:
-        st.info("ℹ️ No HP effects detected.")
+        # Also hide this for cleaner UI
+        # st.info("ℹ️ No HP effects detected.")
         return
 
     # Apply each effect

@@ -1,0 +1,290 @@
+/* Fantasy UI styling for D&D Game */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=IM+Fell+English+SC&display=swap');
+
+/* Main Container */
+.fantasy-container {
+    font-family: 'Cinzel', serif;
+    color: #d4c6a1;
+    background-color: #1a1a1a;
+    border: 8px solid transparent;
+    border-image: url('https://i.imgur.com/IXRB8E0.png') 30 stretch;
+    margin: -1rem -5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px);
+}
+
+/* Scene Section (Top) */
+.scene-section {
+    flex: 1;
+    margin-bottom: 10px;
+    background-color: #1e1e1e;
+    border: 4px solid #704214;
+    border-radius: 8px;
+    padding: 10px;
+    min-height: 250px;
+    position: relative;
+}
+
+.scene-title {
+    font-family: 'IM Fell English SC', serif;
+    color: #d4bb94;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    margin-top: 0;
+    text-align: center;
+}
+
+.scene-image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100% - 40px);
+}
+
+.scene-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border: 2px solid #704214;
+}
+
+.placeholder-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8a7e66;
+    font-style: italic;
+    background-color: #2e2b29;
+    border: 2px solid #704214;
+}
+
+/* Character Section (Bottom) */
+.character-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.player-cards h3, .npc-section h3 {
+    font-family: 'IM Fell English SC', serif;
+    color: #d4bb94;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    margin: 5px 0;
+    text-align: center;
+}
+
+.character-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.character-card {
+    width: 180px;
+    background-color: #2e2b29;
+    border: 4px solid #704214;
+    border-radius: 8px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.player-card {
+    border-color: #704214;
+}
+
+.npc-card {
+    border-color: #8B0000;
+}
+
+.card-portrait {
+    text-align: center;
+    position: relative;
+}
+
+.portrait-image {
+    width: 100%;
+    height: 120px;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #8a7e66;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    background-image: url('https://i.imgur.com/8MOoIZP.png');
+}
+
+.npc-portrait {
+    background-image: url('https://i.imgur.com/H5XVrAg.png');
+}
+
+.character-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #d4bb94;
+    padding: 3px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.card-stats {
+    padding: 5px;
+}
+
+.hp-bar-container {
+    width: 100%;
+    height: 15px;
+    background-color: #3d3d3d;
+    border-radius: 7px;
+    position: relative;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.hp-bar {
+    height: 100%;
+    background-color: #821d1d;
+    border-radius: 7px;
+    transition: width 0.3s ease;
+}
+
+.npc-hp-bar {
+    background-color: #8B0000;
+}
+
+.hp-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    line-height: 15px;
+    color: white;
+    font-size: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    font-size: 12px;
+}
+
+.stat-item {
+    background-color: rgba(112, 66, 20, 0.3);
+    padding: 2px;
+    text-align: center;
+    border-radius: 3px;
+}
+
+.npc-details {
+    text-align: center;
+    font-size: 12px;
+    padding: 5px;
+    color: #d4c6a1;
+}
+
+/* VS Divider */
+.vs-divider {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 10px 0;
+    color: #d4bb94;
+    text-shadow: 0 0 5px #c19a49;
+    font-family: 'IM Fell English SC', serif;
+}
+
+/* Bottom Status Bar */
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #222;
+    border-top: 3px solid #704214;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    color: #d4c6a1;
+    font-family: 'Cinzel', serif;
+    z-index: 1000;
+}
+
+.status-stats {
+    display: flex;
+    gap: 15px;
+}
+
+.status-character {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.status-details {
+    font-size: 14px;
+    color: #a39684;
+}
+
+/* Streamlit Overrides */
+div.stButton > button {
+    background-color: #704214;
+    color: #d4c6a1;
+    border: 2px solid #8a7e66;
+    font-family: 'Cinzel', serif;
+}
+
+div.stButton > button:hover {
+    background-color: #8a7e66;
+    border-color: #d4c6a1;
+}
+
+.stTextInput > div > div > input {
+    background-color: #2e2b29;
+    color: #d4c6a1;
+    border-color: #704214;
+}
+
+.stChatInput {
+    background-color: #2e2b29 !important;
+    border: 2px solid #704214 !important;
+}
+
+.stChatMessage {
+    background-color: rgba(46, 43, 41, 0.7) !important;
+    border: 2px solid #704214 !important;
+}
+
+.css-1544g2n.e1fqkh3o4 {
+    padding-top: 0rem;
+}
+
+.block-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+}
+
+footer {
+    display: none !important;
+}
+
+.css-18e3th9 {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.e1tzin5v3 {
+    gap: 0 !important;
+}
