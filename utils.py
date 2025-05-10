@@ -15,10 +15,12 @@ import requests
 import math
 
 class Player:
-    def __init__(self, name, max_hp, hp, stats=None):
+    def __init__(self, name, max_hp, hp, race, char_class, stats=None):
         self.name = name
         self.max_hp = max_hp
         self.hp = hp
+        self.race = race
+        self.char_class = char_class
         self.stats = stats or {
             "STR": 10,
             "DEX": 10,
