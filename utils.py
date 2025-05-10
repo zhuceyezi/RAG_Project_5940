@@ -1468,7 +1468,7 @@ def set_dnd_theme():
     <style>
         /* Main background and styles - using the custom parchment background */
         .stApp {
-            background-image: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/6e683a25-688c-4bce-9afc-d6644c82e45a/dogcr0-184d6391-3a1b-4491-b14b-257a31504ff0.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzZlNjgzYTI1LTY4OGMtNGJjZS05YWZjLWQ2NjQ0YzgyZTQ1YVwvZG9nY3IwLTE4NGQ2MzkxLTNhMWItNDQ5MS1iMTRiLTI1N2EzMTUwNGZmMC5qcGcifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6ZmlsZS5kb3dubG9hZCJdfQ.ECo-N-4D32QxdJ05G9wvcbvOgxCS6oly_lBL-gjKBKk');
+            background-image: url('https://www.gamewallpapers.com/img_script/wallpaper_dir/img.php?src=wallpaper_dungeons_and_dragons_04_2560x1080.jpg&height=506&sharpen');
             background-size: 100% 100%;
             background-repeat: no-repeat;
             background-attachment: fixed;
@@ -1625,7 +1625,7 @@ def set_dnd_theme():
             text-align: center;
             margin: 20px 0;
             height: 20px;
-            background-image: url('https://i.imgur.com/6ZwiYV4.png');
+            background-image: url('https://img.freepik.com/free-photo/wooden-floor-background_53876-88628.jpg?semt=ais_hybrid&w=740');
             background-repeat: repeat-x;
             background-size: contain;
         }
@@ -1683,7 +1683,7 @@ def set_dnd_theme():
             display: inline-block;
             width: 80px;
             height: 80px;
-            background-image: url('https://i.imgur.com/JcXiklo.png');
+            background-image: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/c5c65fa4-7837-41f9-b669-9b4d734b54a0/d1r382v-97d18110-3d40-4d2d-bd78-9440faec263f.jpg/v1/fill/w_900,h_600,q_75,strp/dungeons_and_dragons_wallpaper_by_xabian_d1r382v-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NjAwIiwicGF0aCI6IlwvZlwvYzVjNjVmYTQtNzgzNy00MWY5LWI2NjktOWI0ZDczNGI1NGEwXC9kMXIzODJ2LTk3ZDE4MTEwLTNkNDAtNGQyZC1iZDc4LTk0NDBmYWVjMjYzZi5qcGciLCJ3aWR0aCI6Ijw9OTAwIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.FM08-ua-eFZqpBSzpTW75yNVBstAkjVhqowt3HF3NjU');
             background-size: contain;
             background-repeat: no-repeat;
             position: absolute;
