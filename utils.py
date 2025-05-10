@@ -1683,7 +1683,7 @@ def set_dnd_theme():
             display: inline-block;
             width: 80px;
             height: 80px;
-            background-image: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/c5c65fa4-7837-41f9-b669-9b4d734b54a0/d1r382v-97d18110-3d40-4d2d-bd78-9440faec263f.jpg/v1/fill/w_900,h_600,q_75,strp/dungeons_and_dragons_wallpaper_by_xabian_d1r382v-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NjAwIiwicGF0aCI6IlwvZlwvYzVjNjVmYTQtNzgzNy00MWY5LWI2NjktOWI0ZDczNGI1NGEwXC9kMXIzODJ2LTk3ZDE4MTEwLTNkNDAtNGQyZC1iZDc4LTk0NDBmYWVjMjYzZi5qcGciLCJ3aWR0aCI6Ijw9OTAwIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.FM08-ua-eFZqpBSzpTW75yNVBstAkjVhqowt3HF3NjU');
+            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLULauAkx3N0n7zkbZstIoVs5vN2R-kJvok4SxjvVxnH4NNMhn72Mzmhf_5xZJ8SBNH44&usqp=CAU');
             background-size: contain;
             background-repeat: no-repeat;
             position: absolute;
