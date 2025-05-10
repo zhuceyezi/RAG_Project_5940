@@ -69,9 +69,42 @@ scene_graph_agent = Agent(
     players={}
 )
 
+# Add custom CSS for fixed chat input
+st.markdown("""
+<style>
+.fixed-chat-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(252, 246, 231, 0.95);
+    padding: 10px 0;
+    z-index: 999;
+    border-top: 2px solid #9c7448;
+    box-shadow: 0 -5px 10px rgba(0,0,0,0.1);
+}
+
+/* Add padding to the bottom of the page to prevent content from being hidden behind the fixed chat input */
+.main-content-area {
+    padding-bottom: 100px;
+}
+
+/* Limit width of chat container on wider screens */
+@media (min-width: 992px) {
+    .fixed-chat-container .element-container {
+        max-width: 80%;
+        margin: 0 auto;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # === Streamlit UI ===
 st.title("🐉 D&D Adventure Master")
 st.markdown('<div class="dnd-divider"></div>', unsafe_allow_html=True)
+
+# Start main content area with padding class
+st.markdown('<div class="main-content-area">', unsafe_allow_html=True)
 
 # === Script Upload Section ===
 with st.container():
@@ -209,8 +242,8 @@ instructions = (
     f"You should only use the available scenes when you decide to move. If no major scene change, you can stay at the same scene."
     f"Here are the available scenes: {st.session_state['scene_list'] if 'scene_list' in st.session_state else ''}"
     f"Try to refer to stats when applicable."
-    "When an NPC’s attitude toward the party should change based on game events or history, "
-    "call the `set_npc_alignment` tool with the NPC’s name and new alignment ('ally','enemy','neutral').\n"
+    "When an NPC's attitude toward the party should change based on game events or history, "
+    "call the `set_npc_alignment` tool with the NPC's name and new alignment ('ally','enemy','neutral').\n"
     "For example: @tool set_npc_alignment(name=\"Goblin Chief\", alignment=\"enemy\").\n"
     "For combat, use calculate_attack and describe the results dramatically.\n"
     "Example: @tool calculate_attack(attacker_name=\"Aragorn\", defender_name=\"Goblin\")\n"
@@ -238,6 +271,12 @@ with chat_container:
         with st.chat_message(role):
             st.markdown(content)
 
+# End main content area div
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Fixed chat input at bottom
+with st.container():
+    st.markdown('<div class="fixed-chat-container">', unsafe_allow_html=True)
     # Chat input
     if prompt := st.chat_input("What is your next action, brave adventurer?"):
         st.session_state.chat_log.append({"role": "user", "content": prompt})
@@ -262,6 +301,7 @@ with chat_container:
 
             # Apply effects like healing or damage
             apply_hp_effects(client, new_messages, agent.players)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # === Enhanced Sidebar ===
 render_sidebar(agent.players)
