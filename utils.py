@@ -51,7 +51,7 @@ class Player:
 
 class NPCPlayer(Player):
     def __init__(self, name, max_hp, hp, race, char_class, personality, combat_role, quirks, voice, trait, alignment: str = "neutral",stats=None):
-        super().__init__(name, max_hp, hp, stats)
+        super().__init__(name, max_hp, hp, race, char_class, stats)
         self.race = race
         self.char_class = char_class
         self.personality = personality
