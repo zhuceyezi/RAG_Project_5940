@@ -5,9 +5,9 @@ It looks like this:
 
 OPENAI_API_KEY=<your_api_key>
 
-OPENAI_BASE_URL=<cornell_proxy_base_url
+OPENAI_BASE_URL=<cornell_proxy_base_url>
 
-Current features:
+Current features(ongoing list for the future):
 1. Add/remove NPCs automatically
 2. Calculate damage based on rules
 3. generate a map(very fansy and feels very D&D) and track current location
