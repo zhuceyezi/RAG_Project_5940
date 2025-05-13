@@ -8,8 +8,8 @@
     "quirks": "Hums lullabies when healing; allergic to cats.",
     "voice": "Soft and melodic",
     "trait": "Wears a silver locket with a photo of her sister.",
-    "alignment": "",
-    "stats": { "STR": 8, "DEX": 12, "CON": 10, "INT": 13, "WIS": 16, "CHA": 14 }
+    "stats": { "STR": 8, "DEX": 12, "CON": 10, "INT": 13, "WIS": 16, "CHA": 14 },
+    "alignment": "ally"
   },
   {
     "name": "Thorn Blackroot",
@@ -20,8 +20,8 @@
     "quirks": "Never enters a room through the door; obsessed with shiny objects.",
     "voice": "Low and gruff, with a hint of mischief",
     "trait": "Keeps a journal with coded entries no one can crack.",
-    "alignment": "",
-    "stats": { "STR": 14, "DEX": 17, "CON": 12, "INT": 10, "WIS": 10, "CHA": 8 }
+    "stats": { "STR": 14, "DEX": 17, "CON": 12, "INT": 10, "WIS": 10, "CHA": 8 },
+    "alignment": "ally"
   },
   {
     "name": "Elda Farwatch",
@@ -32,8 +32,8 @@
     "quirks": "Speaks too fast when excited; wears mismatched socks.",
     "voice": "Nervous and high-pitched",
     "trait": "Has a floating spellbook that follows her like a puppy.",
-    "alignment": "",
-    "stats": { "STR": 6, "DEX": 12, "CON": 10, "INT": 17, "WIS": 14, "CHA": 9 }
+    "stats": { "STR": 6, "DEX": 12, "CON": 10, "INT": 17, "WIS": 14, "CHA": 9 },
+    "alignment": "ally"
   },
   {
     "name": "Durgan Stoneheart",
@@ -44,8 +44,8 @@
     "quirks": "Talks to his axe like it's a person; hates stairs.",
     "voice": "Loud and booming",
     "trait": "Beard is braided into the shape of a hammer.",
-    "alignment": "",
-    "stats": { "STR": 17, "DEX": 10, "CON": 16, "INT": 8, "WIS": 10, "CHA": 9 }
+    "stats": { "STR": 17, "DEX": 10, "CON": 16, "INT": 8, "WIS": 10, "CHA": 9 },
+    "alignment": "ally"
   },
   {
     "name": "Mira Velen",
@@ -56,8 +56,8 @@
     "quirks": "Rhymes when nervous; carries perfume for every mood.",
     "voice": "Velvety and theatrical",
     "trait": "Her lute can shoot sparks when she strums hard.",
-    "alignment": "",
-    "stats": { "STR": 8, "DEX": 14, "CON": 10, "INT": 12, "WIS": 10, "CHA": 17 }
+    "stats": { "STR": 8, "DEX": 14, "CON": 10, "INT": 12, "WIS": 10, "CHA": 17 },
+    "alignment": "ally"
   },
   {
     "name": "Kel Emberwatch",
@@ -68,8 +68,8 @@
     "quirks": "Sleeps with one eye open; names all their arrows.",
     "voice": "Low, calm, slightly monotone",
     "trait": "Always accompanied by a hawk named Whisper.",
-    "alignment": "",
-    "stats": { "STR": 10, "DEX": 16, "CON": 12, "INT": 12, "WIS": 15, "CHA": 9 }
+    "stats": { "STR": 10, "DEX": 16, "CON": 12, "INT": 12, "WIS": 15, "CHA": 9 },
+    "alignment": "ally"
   },
   {
     "name": "Tavi Moonsoul",
@@ -80,8 +80,8 @@
     "quirks": "Quotes scripture constantly; fastidious about cleanliness.",
     "voice": "Firm and clear",
     "trait": "Eyes glow faintly in the dark.",
-    "alignment": "",
-    "stats": { "STR": 12, "DEX": 10, "CON": 14, "INT": 12, "WIS": 17, "CHA": 13 }
+    "stats": { "STR": 12, "DEX": 10, "CON": 14, "INT": 12, "WIS": 17, "CHA": 13 },
+    "alignment": "ally"
   },
   {
     "name": "Rook Ashbrand",
@@ -92,8 +92,8 @@
     "quirks": "Talks to shadows; refuses to remove gloves.",
     "voice": "Smooth, deep, and slow-paced",
     "trait": "His cloak absorbs light unnaturally.",
-    "alignment": "",
-    "stats": { "STR": 8, "DEX": 12, "CON": 11, "INT": 15, "WIS": 13, "CHA": 16 }
+    "stats": { "STR": 8, "DEX": 12, "CON": 11, "INT": 15, "WIS": 13, "CHA": 16 },
+    "alignment": "ally"
   },
   {
     "name": "Nyra Dawnsworn",
@@ -104,8 +104,8 @@
     "quirks": "Keeps a diary titled 'Knightly Thoughts'; salutes before battle.",
     "voice": "Proud and commanding",
     "trait": "Armor glows slightly in sunlight.",
-    "alignment": "",
-    "stats": { "STR": 16, "DEX": 10, "CON": 15, "INT": 10, "WIS": 12, "CHA": 14 }
+    "stats": { "STR": 16, "DEX": 10, "CON": 15, "INT": 10, "WIS": 12, "CHA": 14 },
+    "alignment": "ally"
   },
   {
     "name": "Zekk Tinkbolt",
@@ -116,7 +116,7 @@
     "quirks": "Invents at least one new gadget per day (half explode).",
     "voice": "Fast-talking and squeaky",
     "trait": "Wears goggles with four lenses that constantly flip.",
-    "alignment": "",
-    "stats": { "STR": 7, "DEX": 14, "CON": 10, "INT": 17, "WIS": 11, "CHA": 13 }
+    "stats": { "STR": 7, "DEX": 14, "CON": 10, "INT": 17, "WIS": 11, "CHA": 13 },
+    "alignment": "ally"
   }
 ]
