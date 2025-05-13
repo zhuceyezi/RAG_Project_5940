@@ -4,4 +4,5 @@ To run this project, you need a .env file.
 It looks like this:
 
 OPENAI_API_KEY=<your_api_key>
+
 OPENAI_BASE_URL=<cornell_proxy_base_url>
